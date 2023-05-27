@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from config import settings
+
 #from config.db import on_app_startup
 
 from account import route_auth

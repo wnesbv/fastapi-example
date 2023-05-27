@@ -1,23 +1,24 @@
 
 from datetime import datetime, timedelta
 
-import jwt
+import jwt, bcrypt
 
 from fastapi import HTTPException, status
-from passlib.context import CryptContext
 
 from config.settings import settings
 
 
 class Auth:
-    hasher = CryptContext(schemes=["bcrypt"])
     secret = settings.SECRET_KEY
 
     def hash_password(self, password):
-        return self.hasher.hash(password)
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password.encode(), salt)
+        return hashed
 
     def verify_password(self, password, encoded_password):
-        return self.hasher.verify(password, encoded_password)
+        verify = bcrypt.checkpw(password.encode(), encoded_password)
+        return verify
 
 
     def encode_token(self, username, user):

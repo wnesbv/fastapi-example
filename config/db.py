@@ -1,19 +1,19 @@
 from datetime import datetime
 
+import bcrypt
+
 from sqlalchemy.orm import Session
-from passlib.context import CryptContext
 
 from models.models import User, Item, Comment
 from config.storage_config import Base, engine
-
-from user import schemas
 
 
 def on_app_startup():
     Base.metadata.create_all(bind=engine)
 
-    hasher = CryptContext(schemes=["bcrypt"])
-    password_hash = hasher.hash("password")
+    salt = bcrypt.gensalt()
+    password_hash = bcrypt.hashpw(("password").encode(), salt)
+
     with Session(engine) as session:
         session.add_all(
             [

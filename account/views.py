@@ -95,6 +95,7 @@ def login_user(
 ):
 
     user = get_user_by_email(email=user_details.email, db=db)
+    print("user_details", user_details.password)
 
     if not user:
         raise HTTPException(
@@ -102,7 +103,9 @@ def login_user(
         )
 
     if not auth.verify_password(user_details.password, user.password):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Incorrect password!")
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED, "Incorrect password!"
+        )
 
     if not user.email_verified:
         send_verification_email(bg_tasks, user_details.email, request)
