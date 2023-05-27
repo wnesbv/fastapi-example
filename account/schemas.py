@@ -19,6 +19,4 @@ class EmailSchema(BaseModel):
 
 
 class ResetPasswordDetails(BaseModel):
-    token: str
     password: str
-    re_password: str

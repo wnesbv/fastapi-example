@@ -14,7 +14,10 @@ from . import schemas
 
 def get_user_by_email(email: str, db: Session):
 
-    user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.query(models.User).filter(
+        models.User.email == email
+    ).first()
+
     return user
 
 
@@ -73,15 +76,14 @@ def create_user(
         **user_details_dict, password = auth.hash_password(user.password)
     )
     db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
 
     send_verification_email(
         background_tasks,
         email=user.email,
         request=request
     )
-
-    db.commit()
-    db.refresh(new_user)
 
     return new_user
 
@@ -169,24 +171,17 @@ def resend_verification_email(
     return {"msg": "Письмо с подтверждением отправлено повторно!"}
 
 
+
 def reset_password(
     email: str,
     bg_tasks: BackgroundTasks,
     request: Request,
-    db: Session
 ):
-
-    user = get_user_by_email(email, db)
-
-    if not user:
-        raise HTTPException(404, "User account not found")
 
     token = auth.encode_reset_token(email)
 
-    emails = schemas.EmailSchema(
-        emails=[
-            email,
-        ],
+    email = schemas.EmailSchema(
+        email=[email],
         body={
             "reset_link": f"{request.base_url}reset-password-confirm?token={token}",
             "company_name": settings.PROJECT_TITLE,
@@ -196,47 +191,8 @@ def reset_password(
     send_mail(
         background_tasks=bg_tasks,
         subject=f"{settings.PROJECT_TITLE} Password Reset",
-        emails=emails,
+        email=email,
         template_name="reset_password.html",
-    )
-
-    return True
-
-
-def reset_password_verification(
-    body: schemas.ResetPasswordDetails,
-    request: Request,
-    bg_tasks: BackgroundTasks,
-    db: Session
-):
-
-    email = auth.verify_reset_token(body.token)
-    user = get_user_by_email(email, db)
-
-    if body.password != body.re_password:
-        raise HTTPException(400, "Passwords aren't equal!")
-
-    if auth.verify_password(body.password, user.password):
-        raise HTTPException(400, "Cannot used same password as before!")
-
-    user.password = auth.hash_password(body.password)
-    db.commit()
-
-    token = auth.encode_token(user.email)
-    emails = schemas.EmailSchema(
-        emails=[
-            email,
-        ],
-        body={
-            "reset_link": f"{request.base_url}reset-password-confirm?token={token}",
-            "company_name": settings.PROJECT_TITLE,
-        },
-    )
-    send_mail(
-        background_tasks=bg_tasks,
-        subject=f"{settings.PROJECT_TITLE} Password Reset",
-        emails=emails,
-        template_name="reset_password_confirmation.html",
     )
 
     return True

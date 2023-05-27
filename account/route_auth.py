@@ -18,7 +18,7 @@ from config.dependency import get_db
 from user import schemas as user_schemas
 from spare_parts.user import get_active_user
 
-from .reset_password import reset_password, reset_password_verification
+from models import models
 from .auth import auth
 from . import views
 from . import schemas
@@ -29,8 +29,11 @@ router = APIRouter(include_in_schema=False)
 
 
 @router.get("/register", response_model=user_schemas.UserRegister)
-async def get_register(request: Request):
-    return templates.TemplateResponse("auth/register.html", {"request": request})
+def get_register(request: Request):
+
+    return templates.TemplateResponse(
+        "auth/register.html", {"request": request}
+    )
 
 
 @router.post("/register", response_model=user_schemas.UserCreate)
@@ -102,7 +105,6 @@ def confirmation_email(
     return response
 
 
-
 # ...
 
 
@@ -118,7 +120,7 @@ def get_reset_password(
 
 
 @router.post("/reset-password/")
-async def reset_password(
+async def post_reset_password(
     bg_tasks: BackgroundTasks,
     request: Request,
     db: Session = Depends(get_db),
@@ -127,7 +129,7 @@ async def reset_password(
     user = views.get_user_by_email(email, db)
 
     if user:
-        reset_password(bg_tasks=bg_tasks, request=request, email=email)
+        views.reset_password(bg_tasks=bg_tasks, request=request, email=email)
 
         return templates.TemplateResponse(
             "components/successful.html",
@@ -163,40 +165,27 @@ def get_reset_password_confirm(
 @router.post("/reset-password-confirm/")
 async def reset_password_confirm(
     token: str,
-    bg_tasks: BackgroundTasks,
     request: Request,
     db: Session = Depends(get_db),
     password: str = Form(...),
-    re_password: str = Form(...),
 ):
 
-    body = schemas.ResetPasswordDetails(token=token, password=password, re_password=re_password)
+    user_details = schemas.ResetPasswordDetails(password=password)
 
-    email = auth.verify_reset_token(body.token)
+    email = auth.verify_reset_token(token)
     user = views.get_user_by_email(email, db)
 
-    if body.password != body.re_password:
-        return templates.TemplateResponse(
-            "components/error.html",
-            {
-                "request": request,
-                "message": "passwords aren't equal!..!",
-            },
-        )
-
-    if auth.verify_password(body.password, user.password):
-        return templates.TemplateResponse(
-            "components/error.html",
-            {
-                "request": request,
-                "message": "It is not possible to use the same password as before..!",
-            },
-        )
-
-    user.password = auth.hash_password(body.password)
-
     if user:
-        reset_password_verification(body, request, bg_tasks, db)
+        pswd = auth.hash_password(password)
+
+        existing_user = db.query(
+            models.User
+        ).filter(models.User.email == email)
+
+        user_details.__dict__.update(password=pswd)
+        existing_user.update(user_details.__dict__)
+        db.commit()
+
 
         return templates.TemplateResponse(
             "components/successful.html",

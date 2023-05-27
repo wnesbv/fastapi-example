@@ -30,11 +30,17 @@ class Auth:
             "scope": "access_token",
             "sub": username,
         }
-        return jwt.encode(payload, self.secret, algorithm=settings.ALGORITHM)
+        return jwt.encode(
+            payload, self.secret, algorithm=settings.ALGORITHM
+        )
 
 
     def decode_token(self, token):
-        payload = jwt.decode(token, self.secret, algorithms=[settings.ALGORITHM])
+
+        payload = jwt.decode(
+            token, self.secret, algorithms=settings.ALGORITHM
+        )
+
         if payload["scope"] == "access_token":
             return payload["sub"]
 
@@ -55,7 +61,9 @@ class Auth:
 
     def verify_email(self, token):
         try:
-            payload = jwt.decode(token, self.secret, algorithms=[settings.ALGORITHM])
+            payload = jwt.decode(
+                token, self.secret, algorithms=settings.ALGORITHM
+            )
 
             if payload["scope"] == "email_verification":
                 username = payload["sub"]
@@ -82,12 +90,16 @@ class Auth:
 
     def verify_reset_token(self, token):
         try:
-            payload = jwt.decode(token, self.secret, algorithms=[settings.ALGORITHM])
+            payload = jwt.decode(
+                token, self.secret, algorithms=settings.ALGORITHM
+            )
 
             if payload["scope"] == "reset_token":
                 username = payload["sub"]
                 return username
+
             raise HTTPException(status_code=401, detail="Invalid scope for token")
+
         except jwt.ExpiredSignatureError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Reset token expired"
