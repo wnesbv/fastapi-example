@@ -1,0 +1,78 @@
+
+{% extends "base.html" %}
+{% block title %} update {{ obj.title }} {% endblock%}
+
+{% block content %}
+
+    <h1 class="container lead my-4">update item</h1>
+    <div class="container">
+        <div class="row mb-4">
+
+            <form class="card p-3" method="POST" enctype="multipart/form-data">
+                <div class="card-body">
+                <div class="mb-3">
+                    <input
+                        type="text"
+                        placeholder="title"
+                        name="title"
+                        value="{{ obj.title }}"
+                        class="form-control"
+                    />
+                </div>
+
+                <div class="mb-3">
+
+                <link
+                    rel="stylesheet"
+                    href="https://cdnjs.cloudflare.com/ajax/libs/jodit/3.13.4/jodit.es2018.min.css"
+                />
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/jodit/3.13.4/jodit.es2018.min.js"></script>
+
+                    <label for="editor" class="form-label"
+                        >description</label
+                    >
+                    <textarea
+                        class="form-control"
+                        name="description"
+                        id="editor"
+                        rows="3"
+                    >
+                            {{ obj.description }}
+                        </textarea
+                    >
+                </div>
+
+                <div class="mb-3">
+                <sup>category</sup>
+                <input class="form-control w-25 mb-2" type="text" name="category" />
+                    <input
+                        type="file"
+                        required
+                        class="form-control"
+                        name="image_url"
+                        placeholder="item image"
+                    />
+                </div>
+                </div>
+
+                <div class="card-footer">
+                <button type="submit" class="btn btn-outline-primary btn-sm">
+                    submit
+                </button>
+                </div>
+                
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+    $('textarea').each(function () {
+        var editor = Jodit.make(this);
+    });
+</script>
+
+{% endblock %}

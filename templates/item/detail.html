@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %} detail {{ obj.title }} {% endblock%}
+{% block content %}
+
+<h1 class="container lead my-4">item detail...</h1>
+
+<div class="container">
+    <div class="card">
+        <div class="card-body">
+        <ul class="list-group list-group-flush">
+            <sup>item title</sup>
+            <li class="list-group-item mb-4">{{ obj.title }}</li>
+            <sup>description</sup>
+            <li class="list-group-item mb-4">{{ obj.description | safe }}</li>
+            <sup>aulior</sup>
+            <li class="list-group-item mb-4">{{ obj.owner_item_id }}</li>
+            {% if obj.image_url %}
+            <sup>image</sup>
+            <li class="list-group-item">
+                <img src="{{ obj.image_url }}" alt="img" />
+            </li>
+            {% endif %}
+        </ul>
+        </div>
+        <div class="card-footer">
+            <a
+                class="btn btn-outline-primary btn-sm my-3"
+                href="/update-item/{{ obj.id }}"
+            >
+                update item
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if cmt_list %}
+<div class="container mt-3">
+    <div class="card">
+        <div class="card-header">
+            <sub>comment</sub>
+        </div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                {% for cmt in cmt_list %}
+                <li class="list-group-item shadow p-3 mb-3">
+                    {{ cmt.opinion }}
+                    <sup class="float-end"> {{ cmt.created_at }} </sup>
+                    <a
+                        class="btn btn-outline-primary btn-sm"
+                        href="/update-comment/{{ cmt.id }}"
+                        >update</a
+                    >
+                    <a
+                        class="btn btn-outline-danger btn-sm"
+                        href="/delete-comment/{{ cmt.id }}"
+                        >delete</a
+                    >
+                </li>
+
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="container">
+    <form meliod="POST">
+        <div class="my-2">
+            <label for="exampleFormControlTextarea1" class="form-label">
+                <sub>comment form</sub>
+            </label>
+
+            <textarea
+                class="form-control"
+                required
+                name="opinion"
+                id="exampleFormControlTextarea1"
+                rows="3"
+            >
+                        {{ opinion }}
+                    </textarea
+            >
+        </div>
+
+        <button type="submit" class="btn btn-outline-primary btn-sm">
+            submit
+        </button>
+    </form>
+</div>
+
+<div class="container mt-3">
+    <span class="d-flex">
+        <a class="page-link mx-2" href="/like/{{obj.id}}">to like</a>
+        <a class="page-link mx-2" href="/dislike/{{obj.id}}">to dislike</a>
+    </span>
+    <ul class="list-group list-group-horizontal mb-5">
+        <li class="list-group-item shadow m-2">
+            <span class="badge bg-primary">{{ total_like }}</span>
+        </li>
+        <li class="list-group-item shadow m-2">
+            <span class="badge bg-danger">{{ total_dislike }}</span>
+        </li>
+    </ul>
+</div>
+
+{% endblock %}

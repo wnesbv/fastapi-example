@@ -1,0 +1,143 @@
+
+import os
+from datetime import datetime
+
+from fastapi import (
+    HTTPException,
+    APIRouter,
+    Depends,
+    Request,
+    responses,
+    Form,
+    File,
+    UploadFile,
+    status,
+)
+
+from sqlalchemy.orm import Session
+from pathlib import Path, PurePosixPath
+
+from models import models
+from item import schemas
+
+
+def img_creat(
+    category: str = Form(...),
+    image_url: UploadFile  = File(...)
+):
+
+    save_path = f"./static/{category}"
+    file_path = f"{save_path}/{image_url.filename}"
+
+    ext = PurePosixPath(image_url.filename).suffix
+
+    if ext not in (".png", ".jpg", ".jpeg"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Format files: png, jpg, jpeg ..!"
+        )
+    if Path(file_path).exists():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Error..! File exists..!"
+        )
+    os.makedirs(save_path, exist_ok=True)
+
+    with open(f"{file_path}", "wb") as fle:
+        fle.write(image_url.file.read())
+    return file_path
+
+
+def create_new_item(
+    obj_in: schemas.ItemCreate,
+    db: Session,
+    owner_item_id: int,
+):
+
+    item_obj = models.Item(**obj_in.dict(),
+        owner_item_id = owner_item_id
+    )
+
+    db.add(item_obj)
+    db.commit()
+    db.refresh(item_obj)
+
+    return item_obj
+
+
+def update_item(
+    id: int,
+    obj_in: schemas.ItemUpdate,
+    db: Session,
+    modified_at: datetime | None = None,
+):
+
+    existing_item = db.query(models.Item).filter(models.Item.id == id)
+
+    if not existing_item.first():
+        return False
+
+    obj_in.__dict__.update(
+        modified_at=modified_at
+    )
+    existing_item.update(obj_in.__dict__)
+    db.commit()
+
+    return existing_item
+
+
+def item_delete(
+    id: int,
+    db: Session,
+):
+
+    db.query(models.Item).filter(models.Item.id == id).delete()
+    db.commit()
+
+    return True
+
+
+# ...
+
+
+def list_item(db: Session):
+
+    obj_list = db.query(models.Item).all()
+
+    return obj_list
+
+
+def list_user_item(
+    db: Session,
+    owner_item_id,
+):
+
+    obj_list = db.query(models.Item).filter(
+        models.Item.owner_item_id == owner_item_id
+    )
+
+    return obj_list
+
+
+def retreive_item(
+    id: int,
+    db: Session
+):
+
+    obj = db.query(models.Item).filter(models.Item.id == id).first()
+
+    return obj
+
+
+# ...
+
+def search_item(
+    query: str,
+    db: Session
+):
+
+    obj_list = (
+        db.query(models.Item).filter(models.Item.title.contains(query))
+    )
+
+    return obj_list

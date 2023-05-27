@@ -1,0 +1,41 @@
+
+{% extends "base.html" %}
+{% block title %} detail {{ obj.email }} {% endblock %}
+
+{% block content %}
+
+    <h1 class="container lead my-4">user detail</h1>
+    <div class="container">
+        <div class="h-100 p-5 bg-light border rounded-3">
+            <div class="shadow p-3 mb-5 bg-body rounded">
+                <ul class="list-group list-group-flush">
+
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>
+                            <span>id</span>
+                        </span>
+                        <span class="w-75">{{ obj.id }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>
+                            <span>name</span>
+                        </span>
+                        <span class="w-75">{{ obj.name }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>
+                            <span>mail</span>
+                        </span>
+                        <span class="w-75">{{ obj.email }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <a class="btn btn-outline-primary btn-sm mt-3" href="/update-user/{{ obj.id }}">
+            update user
+        </a>
+
+    </div>
+
+{% endblock %}

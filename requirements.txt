@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+pyjwt
+passlib[bcrypt]
+SQLAlchemy
+aiosqlite
+psycopg2-binary
+alembic
+python-decouple
+python-slugify
+fastapi-mail
+databases
+wtforms
+python-multipart
+itsdangerous

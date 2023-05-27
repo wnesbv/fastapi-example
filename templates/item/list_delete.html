@@ -1,0 +1,39 @@
+
+{% extends "base.html" %}
+{% block title %} delete item {% endblock %}
+
+{% block content %}
+    <h1 class="container lead text-danger my-5">delete item</h1>
+    <div class="container">
+        <div class="row">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">sr. no.</th>
+                        <th scope="col">id</th>
+                        <th scope="col">title</th>
+                        <th scope="col">author</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    {% for obj in obj_list %}
+                    <tr>
+                        <th scope="row">loop index {{ loop.index }}</th>
+                        <td>{{ obj.id }}</td>
+                        <td>{{ obj.title }}</td>
+                        <td>{{ obj.owner_item_id }}</td>
+                        <td>
+                            <a href="/delete-item/{{ obj.id }}" class="btn btn-outline-danger btn-sm">
+                                delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+{% endblock %}
