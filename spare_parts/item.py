@@ -1,4 +1,3 @@
-
 import os
 from datetime import datetime
 
@@ -21,11 +20,7 @@ from models import models
 from item import schemas
 
 
-def img_creat(
-    category: str = Form(...),
-    image_url: UploadFile  = File(...)
-):
-
+def img_creat(category: str = Form(...), image_url: UploadFile = File(...)):
     save_path = f"./static/{category}"
     file_path = f"{save_path}/{image_url.filename}"
 
@@ -34,12 +29,11 @@ def img_creat(
     if ext not in (".png", ".jpg", ".jpeg"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Format files: png, jpg, jpeg ..!"
+            detail="Format files: png, jpg, jpeg ..!",
         )
     if Path(file_path).exists():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Error..! File exists..!"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Error..! File exists..!"
         )
     os.makedirs(save_path, exist_ok=True)
 
@@ -51,35 +45,38 @@ def img_creat(
 def create_new_item(
     obj_in: schemas.ItemCreate,
     db: Session,
+    image_url: UploadFile,
     owner_item_id: int,
 ):
 
-    item_obj = models.Item(**obj_in.dict(),
-        owner_item_id = owner_item_id
+    details_dict = obj_in.dict()
+    del details_dict["image_url"]
+
+    new = models.Item(
+        **details_dict,
+        image_url=image_url,
+        owner_item_id=owner_item_id,
     )
 
-    db.add(item_obj)
+    db.add(new)
     db.commit()
-    db.refresh(item_obj)
+    db.refresh(new)
 
-    return item_obj
+    return new
 
 
 def update_item(
     id: int,
     obj_in: schemas.ItemUpdate,
     db: Session,
-    modified_at: datetime | None = None,
+    modified_at: datetime,
 ):
-
     existing_item = db.query(models.Item).filter(models.Item.id == id)
 
     if not existing_item.first():
         return False
 
-    obj_in.__dict__.update(
-        modified_at=modified_at
-    )
+    obj_in.__dict__.update(modified_at=modified_at)
     existing_item.update(obj_in.__dict__)
     db.commit()
 
@@ -90,7 +87,6 @@ def item_delete(
     id: int,
     db: Session,
 ):
-
     db.query(models.Item).filter(models.Item.id == id).delete()
     db.commit()
 
@@ -101,7 +97,6 @@ def item_delete(
 
 
 def list_item(db: Session):
-
     obj_list = db.query(models.Item).all()
 
     return obj_list
@@ -111,19 +106,12 @@ def list_user_item(
     db: Session,
     owner_item_id,
 ):
-
-    obj_list = db.query(models.Item).filter(
-        models.Item.owner_item_id == owner_item_id
-    )
+    obj_list = db.query(models.Item).filter(models.Item.owner_item_id == owner_item_id)
 
     return obj_list
 
 
-def retreive_item(
-    id: int,
-    db: Session
-):
-
+def retreive_item(id: int, db: Session):
     obj = db.query(models.Item).filter(models.Item.id == id).first()
 
     return obj
@@ -131,13 +119,8 @@ def retreive_item(
 
 # ...
 
-def search_item(
-    query: str,
-    db: Session
-):
 
-    obj_list = (
-        db.query(models.Item).filter(models.Item.title.contains(query))
-    )
+def search_item(query: str, db: Session):
+    obj_list = db.query(models.Item).filter(models.Item.title.contains(query))
 
     return obj_list

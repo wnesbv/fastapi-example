@@ -1,4 +1,3 @@
-
 from datetime import datetime, timedelta
 from typing import List, Any, Dict
 
@@ -8,16 +7,16 @@ from fastapi import UploadFile
 
 class ItemBase(BaseModel):
     title: str
-    image_url: str | None = None
-    description: str | None = None
+    description: str
+    image_url: UploadFile
 
 
 class ItemCreate(ItemBase):
-    created_at: datetime | None = None
+    created_at: datetime = None
 
 
 class ItemUpdate(ItemBase):
-    modified_at: datetime | None = None
+    modified_at: datetime = None
 
 
 class Item(ItemBase):

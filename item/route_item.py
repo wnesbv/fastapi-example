@@ -67,10 +67,13 @@ async def create(
     upload = item.img_creat(category, image_url)
     original = upload
     removed = original.replace(".", "", 1)
+
     i = schemas.ItemCreate(
-        title=title, description=description, image_url=removed, created_at=created_at
+        title=title, description=description, image_url=image_url, created_at=created_at
     )
-    obj = item.create_new_item(db=db, obj_in=i, owner_item_id=current_user.id)
+    obj = item.create_new_item(
+        db=db, obj_in=i, image_url=removed, owner_item_id=current_user.id,
+    )
 
     return responses.RedirectResponse(
         f"/item-detail/{ obj.id }/?msg=sucesso..!", status_code=status.HTTP_302_FOUND
@@ -125,7 +128,9 @@ async def update(
         image_url=removed,
         modified_at=modified_at,
     )
-    obj = item.update_item(id=id, obj_in=i, db=db, modified_at=datetime.now()).first()
+    obj = item.update_item(
+        id=id, obj_in=i, db=db, modified_at=datetime.now()
+    ).first()
 
     return responses.RedirectResponse(
         f"/item-detail/{ obj.id }",

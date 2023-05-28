@@ -1,4 +1,3 @@
-
 from datetime import datetime, timedelta
 from typing import List, Any, Dict, Literal
 
@@ -18,9 +17,9 @@ class UserCreate(UserBase):
     created_at: datetime = None
 
 
-class UserUpdate(UserBase):
-    name: str | None = None
-    password: str | None = None
+class UserUpdate(BaseModel):
+    name: str
+    password: str
     modified_at: datetime = None
 
 
@@ -43,4 +42,3 @@ from comment.schemas import Comment
 from vote.schemas import Like, Dislike
 
 User.update_forward_refs()
-

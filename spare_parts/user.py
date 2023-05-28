@@ -57,17 +57,19 @@ def update_user(
     id: int,
     user_details: schemas.UserUpdate,
     db: Session,
-    current_user,
+    current_user: str,
+    password: str,
 ):
 
-    existing_user = db.query(models.User).filter(models.User.id == current_user.id)
+    existing_user = db.query(
+        models.User
+    ).filter(models.User.id == current_user.id)
 
-    user_details.__dict__.update()
+    user_details.__dict__.update(password=password)
     existing_user.update(user_details.__dict__)
     db.commit()
 
     return existing_user
-
 
 # ...
 

@@ -72,12 +72,12 @@ def create_user(
 
     del user_details_dict["password"]
 
-    new_user = models.User(
+    new = models.User(
         **user_details_dict, password = auth.hash_password(user.password)
     )
-    db.add(new_user)
+    db.add(new)
     db.commit()
-    db.refresh(new_user)
+    db.refresh(new)
 
     send_verification_email(
         background_tasks,
@@ -85,7 +85,7 @@ def create_user(
         request=request
     )
 
-    return new_user
+    return new
 
 
 def login_user(

@@ -15,12 +15,7 @@ from sqlalchemy.orm import Session
 from models import models
 from account.auth import auth
 
-from spare_parts.user import (
-    update_user,
-    list_user,
-    retreive_user,
-    get_active_user,
-)
+from spare_parts import user
 from config.dependency import get_db
 from . import schemas
 
@@ -30,14 +25,17 @@ router = APIRouter(include_in_schema=False)
 
 
 @router.get("/update-user/{id}")
-def to_update(
+def get_update(
     id: str,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_active_user),
+    current_user: models.User = Depends(
+        user.get_active_user
+    ),
 ):
 
-    obj = retreive_user(id=id, db=db)
+    obj = user.retreive_user(id=id, db=db)
+
     if obj.id == current_user.id or current_user.is_admin:
 
         return templates.TemplateResponse(
@@ -48,7 +46,6 @@ def to_update(
                 "obj": obj,
             },
         )
-
     return templates.TemplateResponse(
         "components/error.html",
         {
@@ -62,21 +59,22 @@ def to_update(
 async def to_update(
     id: str,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_active_user),
+    current_user: models.User = Depends(
+        user.get_active_user
+    ),
     name: str = Form(...),
-    email: str = Form(...),
     password: str = Form(...),
 ):
 
     user_details = schemas.UserUpdate(
-        name=name, email=email, password=auth.hash_password(password)
+        name=name, password=password
     )
-
-    obj = update_user(
+    obj = user.update_user(
         id=id,
+        db=db,
         user_details=user_details,
         current_user=current_user,
-        db=db,
+        password=auth.hash_password(password)
     ).first()
 
     return responses.RedirectResponse(
@@ -93,7 +91,7 @@ def user_list(
     db: Session = Depends(get_db),
 ):
 
-    obj_list = list_user(db=db)
+    obj_list = user.list_user(db=db)
 
     return templates.TemplateResponse(
         "user/list.html",
@@ -111,7 +109,7 @@ def user_detail(
     db: Session = Depends(get_db),
 ):
 
-    obj = retreive_user(id=id, db=db)
+    obj = user.retreive_user(id=id, db=db)
 
     return templates.TemplateResponse(
         "user/detail.html",

@@ -1,4 +1,6 @@
 
+from datetime import datetime
+
 from fastapi import (
     BackgroundTasks,
     APIRouter,
@@ -43,16 +45,19 @@ async def register(
     db: Session = Depends(get_db),
     email: EmailStr = Form(...),
     password: str = Form(...),
+    created_at: datetime = datetime.now(),
 ):
 
-    user = user_schemas.UserCreate(email=email, password=password)
+    user = user_schemas.UserCreate(
+        email=email, password=password, created_at=created_at
+    )
+
     obj = views.create_user(
         user=user,
         background_tasks=background_tasks,
         request=request,
         db=db,
     )
-
     return responses.RedirectResponse(
         f"/user-detail/{obj.id}", status_code=status.HTTP_302_FOUND
     )
@@ -108,48 +113,6 @@ def confirmation_email(
 # ...
 
 
-@router.get("/reset-password")
-def get_reset_password(
-    request: Request,
-):
-
-    return templates.TemplateResponse(
-        "auth/reset-password.html",
-        {"request": request},
-    )
-
-
-@router.post("/reset-password")
-async def post_reset_password(
-    bg_tasks: BackgroundTasks,
-    request: Request,
-    db: Session = Depends(get_db),
-    email: str = Form(...),
-):
-    user = views.get_user_by_email(email, db)
-
-    if user:
-        views.reset_password(bg_tasks=bg_tasks, request=request, email=email)
-
-        return templates.TemplateResponse(
-            "components/successful.html",
-            {
-                "request": request,
-                "message": "reset email sent..!",
-            },
-        )
-
-    return templates.TemplateResponse(
-        "components/error.html",
-        {
-            "request": request,
-            "message": "we don't have: email..!",
-        },
-    )
-
-
-# ...
-
 @router.get("/email-verify-resend")
 def get_verification_email(
     request: Request,
@@ -174,6 +137,48 @@ def resend_verification_email(
     return response
 
 
+# ...
+@router.get("/reset-password")
+def get_reset_password(
+    request: Request,
+):
+
+    return templates.TemplateResponse(
+        "auth/reset-password.html",
+        {"request": request},
+    )
+
+
+@router.post("/reset-password")
+async def post_reset_password(
+    bg_tasks: BackgroundTasks,
+    request: Request,
+    db: Session = Depends(get_db),
+    email: str = Form(...),
+):
+
+    user = views.get_user_by_email(email, db)
+    if user:
+        views.reset_password(
+            bg_tasks=bg_tasks, request=request, email=email
+        )
+        return templates.TemplateResponse(
+            "components/successful.html",
+            {
+                "request": request,
+                "message": "reset email sent..!",
+            },
+        )
+    return templates.TemplateResponse(
+        "components/error.html",
+        {
+            "request": request,
+            "message": "we don't have: email..!",
+        },
+    )
+
+
+# ...
 @router.get("/reset-password-confirm")
 def get_reset_password_confirm(
     request: Request,
@@ -196,7 +201,9 @@ async def reset_password_confirm(
     user_details = schemas.ResetPasswordDetails(password=password)
 
     email = auth.verify_reset_token(token)
+    print(email)
     user = views.get_user_by_email(email, db)
+    print(user)
 
     if user:
         pswd = auth.hash_password(password)
