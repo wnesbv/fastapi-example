@@ -108,7 +108,7 @@ def confirmation_email(
 # ...
 
 
-@router.get("/reset-password/")
+@router.get("/reset-password")
 def get_reset_password(
     request: Request,
 ):
@@ -119,7 +119,7 @@ def get_reset_password(
     )
 
 
-@router.post("/reset-password/")
+@router.post("/reset-password")
 async def post_reset_password(
     bg_tasks: BackgroundTasks,
     request: Request,
@@ -150,8 +150,31 @@ async def post_reset_password(
 
 # ...
 
+@router.get("/email-verify-resend")
+def get_verification_email(
+    request: Request,
+):
 
-@router.get("/reset-password-confirm/")
+    return templates.TemplateResponse(
+        "auth/resend_verification_email.html",
+        {"request": request},
+    )
+
+
+@router.post("/email-verify-resend")
+def resend_verification_email(
+    background_tasks: BackgroundTasks,
+    requests: Request,
+    db: Session = Depends(get_db),
+    email: str = Form(...),
+):
+    response = views.resend_verification_email(
+        email, background_tasks, requests, db
+    )
+    return response
+
+
+@router.get("/reset-password-confirm")
 def get_reset_password_confirm(
     request: Request,
 ):
@@ -162,7 +185,7 @@ def get_reset_password_confirm(
     )
 
 
-@router.post("/reset-password-confirm/")
+@router.post("/reset-password-confirm")
 async def reset_password_confirm(
     token: str,
     request: Request,
@@ -204,6 +227,7 @@ async def reset_password_confirm(
     )
 
 
+# ...
 @router.get("/me", response_model=user_schemas.User)
 def get_user_profile(
     request: Request,

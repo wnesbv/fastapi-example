@@ -16,7 +16,7 @@ from account import views
 router = APIRouter(prefix="/docs", tags=["Authentication"])
 
 
-@router.post("/register/", response_model=user_schemas.UserCreate)
+@router.post("/register", response_model=user_schemas.UserCreate)
 def register_user(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -28,7 +28,7 @@ def register_user(
     return user
 
 
-@router.post("/login/", response_model=schemas.Token)
+@router.post("/login", response_model=schemas.Token)
 def login(
     *,
     user_details: schemas.LoginDetails,
@@ -43,7 +43,7 @@ def login(
     return token
 
 
-@router.get("/email-verify/")
+@router.get("/email-verify")
 def api_verify_email(token: str, db: Session = Depends(get_db)):
 
     response = views.verify_email(token, db)
@@ -51,7 +51,7 @@ def api_verify_email(token: str, db: Session = Depends(get_db)):
     return response
 
 
-@router.get("/email-verify-resend/")
+@router.get("/email-verify-resend")
 def resend_verification_email(
     email: EmailStr,
     background_tasks: BackgroundTasks,
@@ -64,7 +64,7 @@ def resend_verification_email(
 
 # ..
 
-@router.get("/reset-password/")
+@router.get("/reset-password")
 def reset_password(
     email: EmailStr,
     bg_tasks: BackgroundTasks,
@@ -82,7 +82,7 @@ def reset_password(
 # ..
 
 
-@router.post("/reset-password-confirm/")
+@router.post("/reset-password-confirm")
 def rest_password_confirm(
     body: schemas.ResetPasswordDetails,
     bg_tasks: BackgroundTasks,
@@ -98,7 +98,7 @@ def rest_password_confirm(
 
 
 # ...
-@router.get("/me/", response_model=user_schemas.User)
+@router.get("/me", response_model=user_schemas.User)
 def get_user_profile(
     current_user: user_schemas.User = Depends(get_active_user)
 ):
