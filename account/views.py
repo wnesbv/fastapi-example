@@ -54,7 +54,7 @@ def send_verification_email(
 # ...
 
 
-def create_user(
+async def create_user(
     user: UserCreate,
     db: Session,
     background_tasks: BackgroundTasks,

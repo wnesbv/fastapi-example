@@ -69,16 +69,16 @@ async def to_update(
     user_details = schemas.UserUpdate(
         name=name, password=password
     )
-    obj = user.update_user(
+    await user.update_user(
         id=id,
         db=db,
         user_details=user_details,
         current_user=current_user,
         password=auth.hash_password(password)
-    ).first()
+    )
 
     return responses.RedirectResponse(
-        f"/user-detail/{ obj.id }",
+        f"/user-detail/{id }",
         status_code=status.HTTP_302_FOUND,
     )
 

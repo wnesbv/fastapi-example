@@ -52,7 +52,7 @@ async def register(
         email=email, password=password, created_at=created_at
     )
 
-    obj = views.create_user(
+    obj = await views.create_user(
         user=user,
         background_tasks=background_tasks,
         request=request,

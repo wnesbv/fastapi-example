@@ -45,7 +45,7 @@ def img_creat(
     return file_path
 
 
-def create_new_item(
+async def create_new_item(
     obj_in: schemas.ItemCreate,
     db: Session,
     image_url: UploadFile,
@@ -56,6 +56,7 @@ def create_new_item(
     del details_dict["image_url"]
 
     new = models.Item(
+        exclude_unset=True,
         **details_dict,
         image_url=image_url,
         owner_item_id=owner_item_id,
@@ -68,16 +69,15 @@ def create_new_item(
     return new
 
 
-def update_item(
+async def update_item(
     id: int,
     obj_in: schemas.ItemUpdate,
     db: Session,
     modified_at: datetime,
 ):
-    existing_item = db.query(models.Item).filter(models.Item.id == id)
-
-    if not existing_item.first():
-        return False
+    existing_item = db.query(
+        models.Item
+    ).filter(models.Item.id == id)
 
     obj_in.__dict__.update(modified_at=modified_at)
     existing_item.update(obj_in.__dict__)
