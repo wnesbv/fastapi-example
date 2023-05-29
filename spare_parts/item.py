@@ -20,7 +20,10 @@ from models import models
 from item import schemas
 
 
-def img_creat(category: str = Form(...), image_url: UploadFile = File(...)):
+def img_creat(
+    category: str = Form(...),
+    image_url: UploadFile = File(...)
+):
     save_path = f"./static/{category}"
     file_path = f"{save_path}/{image_url.filename}"
 

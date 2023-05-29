@@ -16,6 +16,7 @@ class ItemCreate(ItemBase):
 
 
 class ItemUpdate(ItemBase):
+    image_url: str
     modified_at: datetime = None
 
 

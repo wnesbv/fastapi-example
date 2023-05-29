@@ -68,12 +68,12 @@ def create_user(
             status.HTTP_400_BAD_REQUEST, "User with this email already exists"
         )
 
-    user_details_dict = user.dict()
+    user_dict = user.dict()
 
-    del user_details_dict["password"]
+    del user_dict["password"]
 
     new = models.User(
-        **user_details_dict, password = auth.hash_password(user.password)
+        **user_dict, password = auth.hash_password(user.password)
     )
     db.add(new)
     db.commit()
