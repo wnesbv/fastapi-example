@@ -16,14 +16,13 @@ from fastapi.templating import Jinja2Templates
 
 from sqlalchemy.orm import Session
 
-from config.dependency import get_db
 from user import schemas as user_schemas
-from spare_parts.user import get_active_user
+from config.dependency import get_db
+from user.views import get_active_user
 
 from models import models
 from .auth import auth
-from . import views
-from . import schemas
+from . import schemas, views
 
 
 templates = Jinja2Templates(directory="templates")

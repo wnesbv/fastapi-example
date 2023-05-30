@@ -11,8 +11,8 @@ from sqlalchemy.orm import Session
 
 from user import schemas
 
-from spare_parts.item import search_item
-from spare_parts.user import get_active_user, list_user
+from item.views import search_item
+from user.views import get_active_user, list_user
 from config.dependency import get_db
 
 

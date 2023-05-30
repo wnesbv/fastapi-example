@@ -4,13 +4,11 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response, HTTP
 from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
-from config.dependency import get_db
-from spare_parts.user import get_active_user
-
-from account import schemas
+from account import schemas, views
 from user import schemas as user_schemas
 
-from account import views
+from config.dependency import get_db
+from user.views import get_active_user
 
 
 router = APIRouter(prefix="/docs", tags=["Authentication"])
@@ -23,6 +21,7 @@ def register_user(
     user: user_schemas.UserCreate,
     db: Session = Depends(get_db),
 ):
+
     user = views.create_user(user, db, background_tasks, request)
 
     return user

@@ -1,40 +1,44 @@
 
+from datetime import datetime
+
 from sqlalchemy.orm import Session
 
 from models import models
 from . import schemas
 
 
-def comment_new(
-    obj_in: schemas.CommentCreate,
+async def comment_create(
+    obj_in: schemas.CmtCreate,
     db: Session,
     cmt_user_id: int,
+    cmt_item_id: int,
 ):
 
-    new_comment = Comment(
+    new = models.Comment(
         **obj_in.dict(),
         cmt_user_id=cmt_user_id,
+        cmt_item_id=cmt_item_id,
     )
-    db.add(new_comment)
+
+    db.add(new)
     db.commit()
-    db.refresh(new_comment)
+    db.refresh(new)
 
-    return new_comment
+    return new
 
 
-def update_comment(
+async def up_comment(
     id: int,
-    cmt: schemas.CommentUpdate,
+    cmt: schemas.CmtUpdate,
     db: Session,
-    cmt_user_id,
+    modified_at: datetime,
 ):
-    existing_cmt = db.query(models.Comment).filter(models.Comment.id == id)
-
-    if not existing_cmt.first():
-        return False
+    existing_cmt = db.query(
+        models.Comment
+    ).filter(models.Comment.id == id)
 
     cmt.__dict__.update(
-        cmt_user_id=cmt_user_id
+        modified_at=modified_at
     )
     existing_cmt.update(cmt.__dict__)
     db.commit()
@@ -47,7 +51,9 @@ def comment_delete(
     db: Session,
 ):
 
-    existing_cmt = db.query(models.Comment).filter(models.Comment.id == id)
+    existing_cmt = db.query(
+        models.Comment
+    ).filter(models.Comment.id == id)
 
     if not existing_cmt.first():
         return False
@@ -60,11 +66,21 @@ def comment_delete(
 
 # ...
 
+
 def retreive_cmt(
     id: int,
     db: Session
 ):
 
-    obj = db.query(models.Comment).filter(models.Comment.id == id).first()
+    obj = db.query(
+        models.Comment
+    ).filter(models.Comment.id == id).first()
 
     return obj
+
+
+def list_cmt(db: Session):
+
+    obj_list = db.query(models.Comment).all()
+
+    return obj_list

@@ -62,7 +62,6 @@ async def create_user(
 ):
 
     old_user = get_user_by_email(email=user.email, db=db)
-
     if old_user:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, "User with this email already exists"

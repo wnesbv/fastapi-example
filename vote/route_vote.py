@@ -6,11 +6,9 @@ from sqlalchemy.orm import Session
 
 from models import models
 from config.dependency import get_db
+from user.views import get_active_user
 
-from spare_parts.user import get_active_user
-from spare_parts.vote import like_add, dislike_add, retreive_like, retreive_dislike
-
-from . import schemas
+from . import schemas, views
 
 
 templates = Jinja2Templates(directory="templates")
@@ -18,14 +16,14 @@ router = APIRouter(include_in_schema=False)
 
 
 @router.get("/like/{id}")
-def like_create(
+def get_like_create(
     id: str,
     request: Request,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_active_user),
 ):
     like_user_id=current_user.id
-    if not retreive_like(
+    if not views.retreive_like(
         current_user=like_user_id,
         id=id,
         db=db,
@@ -54,7 +52,7 @@ def like_create(
 ):
     item_in = schemas.LikeChoose(upvote=upvote, like_item_id=id)
 
-    add_like = like_add(
+    add_like = views.like_add(
         db=db,
         like_in=item_in,
         like_user_id=current_user.id
@@ -68,14 +66,14 @@ def like_create(
 # ...
 
 @router.get("/dislike/{id}/")
-def dislike_create(
+def get_dislike_create(
     id: str,
     request: Request,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_active_user),
 ):
     dislike_user_id = current_user.id
-    if not retreive_dislike(
+    if not views.retreive_dislike(
         current_user=dislike_user_id,
         id=id,
         db=db
@@ -102,9 +100,11 @@ def dislike_create(
     current_user: models.User = Depends(get_active_user),
     downvote: bool = Form(False),
 ):
-    item_in = schemas.DislikeChoose(downvote=downvote, dislike_item_id=id)
+    item_in = schemas.DislikeChoose(
+        downvote=downvote, dislike_item_id=id
+    )
 
-    add_dislike = dislike_add(
+    add_dislike = views.dislike_add(
         db=db,
         dislike_in=item_in,
         dislike_user_id=current_user.id

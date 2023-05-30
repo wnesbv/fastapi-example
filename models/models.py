@@ -59,13 +59,12 @@ class Comment(Base):
     __tablename__ = "comment_c"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    opinion = Column(String, nullable=False)
+    opinion_expressed = Column(String, nullable=False)
     created_at = Column(DateTime, nullable=True)
     modified_at = Column(DateTime, nullable=True)
     # ...
     cmt_user_id: Mapped[int] = mapped_column(
         ForeignKey("user_u.id", ondelete="CASCADE")
-
     )
     cmt_item_id: Mapped[int] = mapped_column(
         ForeignKey("item_i.id", ondelete="CASCADE")
