@@ -4,63 +4,62 @@
 
 {% block content %}
 
-<h1 class="container lead">Create item</h1>
+<h1 class="container lead my-4">Create item</h1>
 
 <div class="container">
-    <div class="row my-4">
     
-        <form id="send-img" class="card p-3" method="POST" enctype="multipart/form-data">
-            <div class="card-body">
-            <div class="mb-3">
-                <input
-                    type="text"
-                    required
-                    class="form-control"
-                    name="title"
-                    placeholder="item title"
-                />
-            </div>
+    <form id="send-img" class="card p-3" method="POST" enctype="multipart/form-data">
+        <div class="card-body">
+        <div class="mb-3">
+            <input
+                type="text"
+                required
+                class="form-control"
+                name="title"
+                placeholder="item title"
+            />
+        </div>
 
-            <div class="mb-3">
+        <div class="mb-3">
 
-                <link
-                    rel="stylesheet"
-                    href="https://cdnjs.cloudflare.com/ajax/libs/jodit/3.13.4/jodit.es2018.min.css"
-                />
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/jodit/3.13.4/jodit.es2018.min.js"></script>
+            <link
+                rel="stylesheet"
+                href="https://cdnjs.cloudflare.com/ajax/libs/jodit/3.13.4/jodit.es2018.min.css"
+            />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jodit/3.13.4/jodit.es2018.min.js"></script>
 
-                <label for="editor" class="form-label">description</label>
+            <label for="editor" class="form-label">description</label>
 
-                <textarea
-                    class="form-control"
-                    name="description"
-                    id="editor"
-                    rows="3"
-                ></textarea>
+            <textarea
+                class="form-control"
+                name="description"
+                id="editor"
+                rows="3"
+            ></textarea>
 
-                <div id="help" class="form-text">help text</div>
-            </div>
+            <div id="help" class="form-text">help text</div>
+        </div>
 
-            <div class="mb-3">
-                <sup>category</sup>
-                <input class="form-control w-25 mb-2" type="text" name="category" />
-                <input
-                    type="file"
-                    class="form-control"
-                    name="image_url"
-                    placeholder="item image"
-                />
-            </div>
-            </div>
+        <div class="mb-3">
+            <sup>category</sup>
+            <input class="form-control w-25 mb-2" type="text" name="category" />
+            <input
+                type="file"
+                class="form-control"
+                name="image_url"
+                placeholder="item image"
+            />
+        </div>
+        </div>
 
-            <div class="card-footer">
-            <button id="upload-btn" type="submit" class="btn btn-outline-primary btn-sm">
-                submit
-            </button>
-            </div>
+        <div class="card-footer">
+        <button id="upload-btn" type="submit" class="btn btn-outline-primary btn-sm">
+            submit
+        </button>
+        </div>
 
-        </form>
-    </div>
+    </form>
+
 </div>
 
 {% endblock %}

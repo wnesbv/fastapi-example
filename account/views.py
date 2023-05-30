@@ -29,7 +29,7 @@ def generate_verification_email_link(request: Request, email):
     return verification_link
 
 
-def send_verification_email(
+async def send_verification_email(
     background_tasks: BackgroundTasks, email: EmailStr, request: Request
 ):
 
@@ -78,7 +78,7 @@ async def create_user(
     db.commit()
     db.refresh(new)
 
-    send_verification_email(
+    await send_verification_email(
         background_tasks,
         email=user.email,
         request=request
@@ -87,7 +87,7 @@ async def create_user(
     return new
 
 
-def login_user(
+async def login_user(
     user_details: schemas.LoginDetails,
     db: Session,
     bg_tasks: BackgroundTasks,

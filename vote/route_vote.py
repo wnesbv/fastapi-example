@@ -1,10 +1,12 @@
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, Request, Form, responses, status
 from fastapi.templating import Jinja2Templates
 
+from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
-from models import models
 from config.dependency import get_db
 from user.views import get_active_user
 
@@ -50,6 +52,7 @@ def like_create(
     db: Session = Depends(get_db),
     upvote: bool = Form(True),
 ):
+
     item_in = schemas.LikeChoose(upvote=upvote, like_item_id=id)
 
     add_like = views.like_add(
@@ -59,11 +62,12 @@ def like_create(
     )
 
     return responses.RedirectResponse(
-        f"/item-detail/{add_like.like_item_id}", status_code=status.HTTP_302_FOUND
+        f"/item-detail/{ add_like.like_item_id }", status_code=status.HTTP_302_FOUND
     )
 
 
 # ...
+
 
 @router.get("/dislike/{id}/")
 def get_dislike_create(

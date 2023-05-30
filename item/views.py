@@ -47,6 +47,7 @@ async def update_item(
     id: int,
     obj_in: schemas.ItemUpdate,
     db: Session,
+    image_url: str,
     modified_at: datetime,
 ):
     existing_item = db.query(
@@ -54,7 +55,8 @@ async def update_item(
     ).filter(models.Item.id == id)
 
     obj_in.__dict__.update(
-        modified_at=modified_at
+        image_url=image_url,
+        modified_at=modified_at,
     )
     existing_item.update(obj_in.__dict__)
     db.commit()
@@ -132,11 +134,11 @@ async def img_creat(
 
     with open(f"{file_path}", "wb") as fle:
         fle.write(image_url.file.read())
-    return file_path
+        
+    return file_path.replace(".", "", 1)
 
 
 # ...
-
 
 
 def search_item(query: str, db: Session):

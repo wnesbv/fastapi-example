@@ -86,6 +86,9 @@ async def create_item(
     )
 
 
+# ...update
+
+
 @router.get("/update-item/{id}")
 def get_update(
     id: int,
@@ -124,20 +127,18 @@ async def update(
     modified_at: datetime = datetime.now(),
 ):
 
-    upload = views.img_creat(category, image_url)
-    original = upload
-    removed = original.replace(".", "", 1)
-
     i = schemas.ItemUpdate(
         title=title,
         description=description,
-        image_url=removed,
+        image_url=image_url,
         modified_at=modified_at,
     )
-    await views.update_item(
-        id=id, obj_in=i, db=db, modified_at=modified_at
-    )
 
+    upload = await views.img_creat(category, image_url)
+
+    await views.update_item(
+        id=id, obj_in=i, db=db, image_url=upload, modified_at=modified_at
+    )
     return responses.RedirectResponse(
         f"/item-detail/{id }",
         status_code=status.HTTP_302_FOUND,

@@ -87,7 +87,7 @@ async def login(
     response = responses.RedirectResponse(
         "/", status_code=status.HTTP_302_FOUND
     )
-    response.token = views.login_user(
+    response.token = await views.login_user(
         user, db, bg_tasks, request, response=response
     )
     return response

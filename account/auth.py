@@ -43,6 +43,7 @@ class Auth:
 
         if payload["scope"] == "access_token":
             return payload["sub"]
+        return False
 
 
     # ...
@@ -68,6 +69,7 @@ class Auth:
             if payload["scope"] == "email_verification":
                 username = payload["sub"]
                 return username
+                
             raise HTTPException(status_code=401, detail="Invalid scope for token")
         except jwt.ExpiredSignatureError:
             raise HTTPException(

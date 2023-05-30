@@ -7,20 +7,22 @@
 <div class="container">
     <div class="card">
         <div class="card-body">
-        <ul class="list-group list-group-flush">
-            <sup>item title</sup>
-            <li class="list-group-item mb-3">{{ obj.title }}</li>
-            <sup>description</sup>
-            <li class="list-group-item mb-3">{{ obj.description | safe }}</li>
-            <sup>aulior</sup>
-            <li class="list-group-item">{{ obj.owner_item_id }}</li>
-            {% if obj.image_url %}
-            <sup>image</sup>
-            <li class="list-group-item">
-                <img src="{{ obj.image_url }}" alt="img" />
-            </li>
-            {% endif %}
-        </ul>
+            <ul class="list-group list-group-flush">
+                <sup>item title</sup>
+                <li class="list-group-item mb-3">{{ obj.title }}</li>
+                <sup>description</sup>
+                <li class="list-group-item mb-3">
+                    {{ obj.description | safe }}
+                </li>
+                <sup>aulior</sup>
+                <li class="list-group-item">{{ obj.owner_item_id }}</li>
+                {% if obj.image_url %}
+                <sup>image</sup>
+                <li class="list-group-item">
+                    <img src="{{ obj.image_url }}" alt="img" />
+                </li>
+                {% endif %}
+            </ul>
         </div>
         <div class="card-footer">
             <a
@@ -38,7 +40,11 @@
     <div class="card">
         <div class="card-header">
             <h2 class="lead">comment</h2>
-            <a class="btn btn-outline-primary btn-sm float-start" href="/item-detail/{{ obj.id }}/comment">create comment..</a>
+            <a
+                class="btn btn-outline-primary btn-sm float-start"
+                href="/item-detail/{{ obj.id }}/comment"
+                >create comment..</a
+            >
         </div>
         <div class="card-body">
             <ul class="list-group list-group-flush">
@@ -47,17 +53,17 @@
                     <sup>comment id: {{ cmt.id }}</sup>
                     <sup class="float-start">time: {{ cmt.created_at }} </sup>
                     <article class="cmt_list">
-                    <p class="w-75">{{ cmt.opinion_expressed }}</p>
-                    <a
-                        class="btn btn-outline-primary btn-sm"
-                        href="/item-detail/{{ obj.id }}/update-comment/{{ cmt.id }}"
-                        >update</a
-                    >
-                    <a
-                        class="btn btn-outline-danger btn-sm mx-2"
-                        href="/item-detail/{{ obj.id }}/delete-comment/{{ cmt.id }}"
-                        >delete</a
-                    >
+                        <p class="w-75">{{ cmt.opinion_expressed }}</p>
+                        <a
+                            class="btn btn-outline-primary btn-sm"
+                            href="/item-detail/{{ obj.id }}/update-comment/{{ cmt.id }}"
+                            >update</a
+                        >
+                        <a
+                            class="btn btn-outline-danger btn-sm mx-2"
+                            href="/item-detail/{{ obj.id }}/delete-comment/{{ cmt.id }}"
+                            >delete</a
+                        >
                     </article>
                 </li>
                 {% endfor %}
@@ -82,7 +88,4 @@
     </ul>
 </div>
 
-{% endblock %}
-
-{% block scripts %}
-{% endblock %}
+{% endblock %} {% block scripts %} {% endblock %}
