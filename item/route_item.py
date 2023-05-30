@@ -1,6 +1,8 @@
 
 from datetime import datetime
 
+from typing import Annotated
+
 from fastapi import (
     HTTPException,
     APIRouter,
@@ -12,6 +14,8 @@ from fastapi import (
     UploadFile,
     status,
 )
+
+from pydantic import EmailStr
 
 from fastapi.templating import Jinja2Templates
 
@@ -42,8 +46,8 @@ def get_create_item(request: Request):
 
 @router.post("/create-item")
 async def create_item(
+    current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_active_user),
     title: str = Form(...),
     description: str = Form(...),
     category: str = Form(...),
@@ -86,8 +90,8 @@ async def create_item(
 def get_update(
     id: int,
     request: Request,
+    current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_active_user),
 ):
     obj = views.retreive_item(id=id, db=db)
     if obj.owner_item_id == current_user.id:
@@ -146,8 +150,8 @@ async def update(
 @router.get("/list-item-delete")
 def list_item_delete(
     request: Request,
+    current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_active_user),
 ):
     obj_list = views.list_user_item(db, owner_item_id=current_user.id)
 
@@ -171,8 +175,8 @@ def get_delete(
 @router.post("/delete-item/{id}")
 async def delete_item(
     id: str,
+    current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_active_user),
 ):
     obj = views.retreive_item(id=id, db=db)
 

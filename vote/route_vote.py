@@ -19,8 +19,8 @@ router = APIRouter(include_in_schema=False)
 def get_like_create(
     id: str,
     request: Request,
+    current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_active_user),
 ):
     like_user_id=current_user.id
     if not views.retreive_like(
@@ -46,8 +46,8 @@ def get_like_create(
 @router.post("/like/{id}")
 def like_create(
     id: str,
+    current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_active_user),
     upvote: bool = Form(True),
 ):
     item_in = schemas.LikeChoose(upvote=upvote, like_item_id=id)
@@ -69,8 +69,8 @@ def like_create(
 def get_dislike_create(
     id: str,
     request: Request,
+    current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_active_user),
 ):
     dislike_user_id = current_user.id
     if not views.retreive_dislike(
@@ -96,8 +96,8 @@ def get_dislike_create(
 @router.post("/dislike/{id}/")
 def dislike_create(
     id: str,
+    current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_active_user),
     downvote: bool = Form(False),
 ):
     item_in = schemas.DislikeChoose(

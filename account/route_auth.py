@@ -1,12 +1,11 @@
 
 from datetime import datetime
-
+from typing import Annotated
 from fastapi import (
     BackgroundTasks,
     APIRouter,
     Depends,
     Request,
-    Response,
     responses,
     Form,
     status,
@@ -198,11 +197,8 @@ async def reset_password_confirm(
 ):
 
     user_details = schemas.ResetPasswordDetails(password=password)
-
     email = auth.verify_reset_token(token)
-    print(email)
     user = views.get_user_by_email(email, db)
-    print(user)
 
     if user:
         pswd = auth.hash_password(password)
@@ -237,7 +233,7 @@ async def reset_password_confirm(
 @router.get("/me", response_model=user_schemas.User)
 def get_user_profile(
     request: Request,
-    current_user: user_schemas.User = Depends(get_active_user)
+    current_user: Annotated[EmailStr, Depends(get_active_user)],
 ):
 
     return templates.TemplateResponse("index.html",

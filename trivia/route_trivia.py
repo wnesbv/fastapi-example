@@ -50,10 +50,3 @@ async def home(
         "index.html",
         {"request": request, "obj_list": obj_list, "msg": msg}
     )
-
-
-@router.get("/me/", response_model=schemas.User)
-def get_user_profile(
-    current_user: schemas.User = Depends(get_active_user)
-):
-    return current_user
