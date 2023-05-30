@@ -44,17 +44,18 @@
             <ul class="list-group list-group-flush">
                 {% for cmt in cmt_list %}
                 <li class="list-group-item shadow p-3 mb-3">
-                    <sup class="float-start"> {{ cmt.created_at }} </sup>
+                    <sup>comment id: {{ cmt.id }}</sup>
+                    <sup class="float-start">time: {{ cmt.created_at }} </sup>
                     <article class="cmt_list">
                     <p class="w-75">{{ cmt.opinion_expressed }}</p>
                     <a
                         class="btn btn-outline-primary btn-sm"
-                        href="/update-comment/{{ cmt.id }}"
+                        href="/item-detail/{{ obj.id }}/update-comment/{{ cmt.id }}"
                         >update</a
                     >
                     <a
                         class="btn btn-outline-danger btn-sm mx-2"
-                        href="/delete-comment/{{ cmt.id }}"
+                        href="/item-detail/{{ obj.id }}/delete-comment/{{ cmt.id }}"
                         >delete</a
                     >
                     </article>

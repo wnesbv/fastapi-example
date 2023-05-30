@@ -46,7 +46,7 @@ async def up_comment(
     return existing_cmt
 
 
-def comment_delete(
+async def comment_delete(
     id: int,
     db: Session,
 ):

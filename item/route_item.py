@@ -64,14 +64,14 @@ async def create_item(
         #     detail="name already registered..!"
         # )
 
-
-    upload = views.img_creat(category, image_url)
-    original = upload
-    removed = original.replace(".", "", 1)
-
     i = schemas.ItemCreate(
         title=title, description=description, image_url=image_url, created_at=created_at
     )
+
+    upload = await views.img_creat(category, image_url)
+    original = upload
+    removed = original.replace(".", "", 1)
+
     obj = await views.create_new_item(
         db=db, obj_in=i, image_url=removed, owner_item_id=current_user.id,
     )

@@ -38,6 +38,7 @@ def get_create_comment(
         )
     return False
 
+
 @router.post("/item-detail/{id}/comment")
 async def create_comment(
     id: int,
@@ -62,25 +63,27 @@ async def create_comment(
 # ...
 
 
-@router.get("/update-comment/{id}")
+@router.get("/item-detail/{I_id}/update-comment/{cmt_id}")
 def get_update_comment(
-    id: str,
+    cmt_id: int,
     request: Request,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_active_user),
 ):
+
     cmt_user_id = current_user.id
-    cmt = views.retreive_cmt(id=id, db=db)
+    cmt = views.retreive_cmt(id=cmt_id, db=db)
 
     return templates.TemplateResponse(
         "comment/up_comment.html",
-        {"request": request, "id": id, "cmt_user_id": cmt_user_id, "cmt": cmt},
+        {"request": request, "cmt_user_id": cmt_user_id, "cmt": cmt},
     )
 
 
-@router.post("/update-comment/{id}")
+@router.post("/item-detail/{id}/update-comment/{cmt_id}")
 async def update_comment(
-    id: str,
+    id: int,
+    cmt_id: int,
     db: Session = Depends(get_db),
     opinion_expressed: str = Form(...),
     modified_at: datetime = datetime.now(),
@@ -88,41 +91,46 @@ async def update_comment(
     cmt = schemas.CmtUpdate(
         opinion_expressed=opinion_expressed, modified_at=modified_at
     )
-    await views.up_comment(id=id, cmt=cmt, db=db, modified_at=modified_at)
+    await views.up_comment(id=cmt_id, cmt=cmt, db=db, modified_at=modified_at)
 
     return responses.RedirectResponse(
         f"/item-detail/{id}", status_code=status.HTTP_302_FOUND
     )
 
 
-@router.get("/delete-comment/{id}")
+# ...
+
+
+@router.get("/item-detail/{id}/delete-comment/{cmt_id}")
 def get_delete_comment(
-    id: int,
+    cmt_id: int,
     request: Request,
     db: Session = Depends(get_db),
     current_user: int = Depends(get_active_user),
 ):
+
     cmt_user_id = current_user.id
-    obj = views.retreive_cmt(id=id, db=db)
+    obj = views.retreive_cmt(id=cmt_id, db=db)
 
     return templates.TemplateResponse(
         "item/delete.html", {"request": request, "cmt_user_id": cmt_user_id, "obj": obj}
     )
 
 
-@router.post("/delete-comment/{id}")
+@router.post("/item-detail/{id}/delete-comment/{cmt_id}")
 async def delete_comment(
     id: int,
+    cmt_id: int,
     db: Session = Depends(get_db),
     current_user: int = Depends(get_active_user),
 ):
-    obj = views.retreive_cmt(id=id, db=db)
+    obj = views.retreive_cmt(id=cmt_id, db=db)
 
     if obj.cmt_user_id == current_user.id or current_user.is_admin:
-        views.comment_delete(id=id, db=db)
+        await views.comment_delete(id=cmt_id, db=db)
 
         return responses.RedirectResponse(
-            "/item-list", status_code=status.HTTP_302_FOUND
+            f"/item-detail/{id}", status_code=status.HTTP_302_FOUND
         )
 
     raise HTTPException(

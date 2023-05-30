@@ -110,7 +110,7 @@ def retreive_item(
 # ...
 
 
-def img_creat(
+async def img_creat(
     category: str = Form(...),
     image_url: UploadFile = File(...)
 ):
