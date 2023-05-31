@@ -94,13 +94,13 @@ async def login(
 
 
 @router.get("/verify-email")
-def confirmation_email(
+async def confirmation_email(
     request: Request,
     token: str,
     db: Session = Depends(get_db),
 ):
 
-    response = views.account_verify_email(token, db)
+    response = await views.account_verify_email(token, db)
     msg = "Электронная почта успешно подтверждена"
     response = templates.TemplateResponse(
         "index.html", {"request": request, "msg": msg}
@@ -123,13 +123,13 @@ def get_verification_email(
 
 
 @router.post("/email-verify-resend")
-def resend_verification_email(
+async def resend_verification_email(
     background_tasks: BackgroundTasks,
     requests: Request,
     db: Session = Depends(get_db),
     email: str = Form(...),
 ):
-    response = views.resend_verification_email(
+    response = await views.resend_verification_email(
         email, background_tasks, requests, db
     )
     return response
@@ -155,9 +155,9 @@ async def post_reset_password(
     email: str = Form(...),
 ):
 
-    user = views.get_user_by_email(email, db)
+    user = await views.get_user_by_email(email, db)
     if user:
-        views.reset_password(
+        await views.reset_password(
             bg_tasks=bg_tasks, request=request, email=email
         )
         return templates.TemplateResponse(
@@ -197,8 +197,9 @@ async def reset_password_confirm(
 ):
 
     user_details = schemas.ResetPasswordDetails(password=password)
-    email = auth.verify_reset_token(token)
-    user = views.get_user_by_email(email, db)
+
+    email = await auth.verify_reset_token(token)
+    user = await views.get_user_by_email(email, db)
 
     if user:
         pswd = auth.hash_password(password)

@@ -12,7 +12,7 @@ from .auth import auth
 from . import schemas
 
 
-def get_user_by_email(email: str, db: Session):
+async def get_user_by_email(email: str, db: Session):
 
     user = db.query(models.User).filter(
         models.User.email == email
@@ -30,7 +30,9 @@ def generate_verification_email_link(request: Request, email):
 
 
 async def send_verification_email(
-    background_tasks: BackgroundTasks, email: EmailStr, request: Request
+    background_tasks: BackgroundTasks,
+    email: EmailStr,
+    request: Request
 ):
 
     verification_link = generate_verification_email_link(
@@ -61,7 +63,7 @@ async def create_user(
     request: Request,
 ):
 
-    old_user = get_user_by_email(email=user.email, db=db)
+    old_user = await get_user_by_email(email=user.email, db=db)
     if old_user:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, "User with this email already exists"
@@ -95,7 +97,7 @@ async def login_user(
     response: Response,
 ):
 
-    user = get_user_by_email(email=user_details.email, db=db)
+    user = await get_user_by_email(email=user_details.email, db=db)
     print("user_details", user_details.password)
 
     if not user:
@@ -109,7 +111,7 @@ async def login_user(
         )
 
     if not user.email_verified:
-        send_verification_email(bg_tasks, user_details.email, request)
+        await send_verification_email(bg_tasks, user_details.email, request)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Электронная почта не подтверждена. Проверьте свою почту, чтобы узнать, как пройти верификацию.",
@@ -127,13 +129,13 @@ async def login_user(
 # ...
 
 
-def account_verify_email(
+async def account_verify_email(
     token: str,
     db: Session,
 ):
 
     email = auth.verify_email(token)
-    user = get_user_by_email(email, db)
+    user = await get_user_by_email(email, db)
     if not user:
         raise HTTPException(
             401, "Недействительный пользователь... Пожалуйста, создайте учетную запись"
@@ -150,13 +152,13 @@ def account_verify_email(
     return True
 
 
-def resend_verification_email(
+async def resend_verification_email(
     email: str,
     bg_tasks: BackgroundTasks,
     request: Request,
     db: Session,
 ):
-    user = get_user_by_email(email, db)
+    user = await get_user_by_email(email, db)
 
     if not user:
         raise HTTPException(
@@ -165,13 +167,13 @@ def resend_verification_email(
     if user.email_verified:
         raise HTTPException(400, "Электронная почта уже проверена!")
 
-    send_verification_email(bg_tasks, email, request)
+    await send_verification_email(bg_tasks, email, request)
 
     return {"msg": "Письмо с подтверждением отправлено повторно!"}
 
 
 
-def reset_password(
+async def reset_password(
     email: str,
     bg_tasks: BackgroundTasks,
     request: Request,

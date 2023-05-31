@@ -69,7 +69,7 @@ class Auth:
             if payload["scope"] == "email_verification":
                 username = payload["sub"]
                 return username
-                
+
             raise HTTPException(status_code=401, detail="Invalid scope for token")
         except jwt.ExpiredSignatureError:
             raise HTTPException(
@@ -90,7 +90,7 @@ class Auth:
         return jwt.encode(payload, self.secret, algorithm=settings.ALGORITHM)
 
 
-    def verify_reset_token(self, token):
+    async def verify_reset_token(self, token):
         try:
             payload = jwt.decode(
                 token, self.secret, algorithms=settings.ALGORITHM
