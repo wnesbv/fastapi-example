@@ -15,8 +15,13 @@ class ItemCreate(ItemBase):
     created_at: datetime = None
 
 
-class ItemUpdate(ItemBase):
-    image_url: UploadFile
+class ItemUpdate(BaseModel):
+    title: str
+    description: str
+    modified_at: datetime = None
+
+
+class ItemImgUpdate(ItemBase):
     modified_at: datetime = None
 
 

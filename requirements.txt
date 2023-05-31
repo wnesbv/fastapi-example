@@ -10,6 +10,5 @@ python-decouple
 python-slugify
 fastapi-mail
 databases
-wtforms
 python-multipart
 itsdangerous

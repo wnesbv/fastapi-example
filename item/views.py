@@ -43,9 +43,12 @@ async def create_new_item(
     return new
 
 
-async def update_item(
+# ...update
+
+
+async def img_update_item(
     id: int,
-    obj_in: schemas.ItemUpdate,
+    obj_in: schemas.ItemImgUpdate,
     db: Session,
     image_url: str,
     modified_at: datetime,
@@ -63,6 +66,25 @@ async def update_item(
 
     return existing_item
 
+
+async def update_item(
+    id: int,
+    obj_in: schemas.ItemUpdate,
+    db: Session,
+    modified_at: datetime,
+):
+    existing_item = db.query(
+        models.Item
+    ).filter(models.Item.id == id)
+
+    obj_in.__dict__.update(
+        modified_at=modified_at,
+    )
+    existing_item.update(obj_in.__dict__)
+    db.commit()
+
+    return existing_item
+    # ...
 
 async def item_delete(
     id: int,
@@ -109,18 +131,18 @@ def retreive_item(
     return obj
 
 
-# ...
+# ...img
 
 
 async def img_creat(
-    category: str = Form(...),
-    image_url: UploadFile = File(...)
+    category: str,
+    image_url: UploadFile,
 ):
+
     save_path = f"./static/{category}"
     file_path = f"{save_path}/{image_url.filename}"
 
     ext = PurePosixPath(image_url.filename).suffix
-
     if ext not in (".png", ".jpg", ".jpeg"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -128,13 +150,15 @@ async def img_creat(
         )
     if Path(file_path).exists():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Error..! File exists..!"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Error..! File exists..!"
         )
+
     os.makedirs(save_path, exist_ok=True)
 
     with open(f"{file_path}", "wb") as fle:
         fle.write(image_url.file.read())
-        
+
     return file_path.replace(".", "", 1)
 
 

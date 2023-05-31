@@ -122,22 +122,35 @@ async def update(
     db: Session = Depends(get_db),
     title: str = Form(...),
     description: str = Form(...),
-    category: str = Form(...),
-    image_url: UploadFile = File(...),
+    category: str = Form(""),
+    image_url: UploadFile = File(""),
     modified_at: datetime = datetime.now(),
 ):
 
-    i = schemas.ItemUpdate(
+    img = schemas.ItemImgUpdate(
         title=title,
         description=description,
         image_url=image_url,
         modified_at=modified_at,
     )
+    i = schemas.ItemUpdate(
+        title=title,
+        description=description,
+        modified_at=modified_at,
+    )
+
+    if image_url.filename == "" or category == "":
+        await views.update_item(
+            id=id, obj_in=i, db=db, modified_at=modified_at
+        )
+        return responses.RedirectResponse(
+            f"/item-detail/{id }",
+            status_code=status.HTTP_302_FOUND,
+        )
 
     upload = await views.img_creat(category, image_url)
-
-    await views.update_item(
-        id=id, obj_in=i, db=db, image_url=upload, modified_at=modified_at
+    await views.img_update_item(
+        id=id, obj_in=img, db=db, image_url=upload, modified_at=modified_at
     )
     return responses.RedirectResponse(
         f"/item-detail/{id }",
