@@ -1,4 +1,5 @@
 
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, Form, responses, status
@@ -46,23 +47,27 @@ def get_like_create(
 
 
 @router.post("/like/{id}")
-def like_create(
+async def like_create(
     id: str,
     current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
     upvote: bool = Form(True),
+    created_at: datetime = datetime.now(),
 ):
 
-    item_in = schemas.LikeChoose(upvote=upvote, like_item_id=id)
+    i = schemas.LikeChoose(
+        upvote=upvote, created_at=created_at
+    )
 
-    add_like = views.like_add(
+    await views.like_add(
         db=db,
-        like_in=item_in,
-        like_user_id=current_user.id
+        like_in=i,
+        like_item_id=id,
+        like_user_id=current_user.id,
     )
 
     return responses.RedirectResponse(
-        f"/item-detail/{ add_like.like_item_id }", status_code=status.HTTP_302_FOUND
+        f"/item-detail/{ id }", status_code=status.HTTP_302_FOUND
     )
 
 
@@ -98,23 +103,26 @@ def get_dislike_create(
 
 
 @router.post("/dislike/{id}/")
-def dislike_create(
+async def dislike_create(
     id: str,
     current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
     downvote: bool = Form(False),
+    created_at: datetime = datetime.now(),
 ):
-    item_in = schemas.DislikeChoose(
-        downvote=downvote, dislike_item_id=id
+
+    i = schemas.DislikeChoose(
+        downvote=downvote, created_at=created_at
     )
 
-    add_dislike = views.dislike_add(
+    await views.dislike_add(
         db=db,
-        dislike_in=item_in,
+        dislike_in=i,
+        dislike_item_id=id,
         dislike_user_id=current_user.id
     )
 
     return responses.RedirectResponse(
-        f"/item-detail/{add_dislike.dislike_item_id}",
+        f"/item-detail/{ id }",
         status_code=status.HTTP_302_FOUND
     )

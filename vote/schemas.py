@@ -1,13 +1,14 @@
 
+from datetime import datetime
+
 from pydantic import BaseModel
 
 
 class LikeBase(BaseModel):
     upvote: bool
 
-
 class LikeChoose(LikeBase):
-    like_item_id: int
+    created_at: datetime = None
 
 
 class Like(LikeBase):
@@ -28,7 +29,7 @@ class DislikeBase(BaseModel):
 
 
 class DislikeChoose(DislikeBase):
-    dislike_item_id: int
+    created_at: datetime = None
 
 
 class Dislike(DislikeBase):

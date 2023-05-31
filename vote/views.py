@@ -6,40 +6,45 @@ from models import models
 from vote import schemas
 
 
-def like_add(
-    like_in: schemas.Like,
+async def like_add(
+    like_in: schemas.LikeChoose,
     db: Session,
     like_user_id: int,
+    like_item_id: int,
 ):
 
-    new_like = models.Like(
+    new = models.Like(
         **like_in.dict(),
         like_user_id=like_user_id,
+        like_item_id=like_item_id,
     )
-    db.add(new_like)
+    db.add(new)
     db.commit()
-    db.refresh(new_like)
+    db.refresh(new)
 
-    return new_like
+    return new
 
 
 # ...
 
-def dislike_add(
+
+async def dislike_add(
     dislike_in: schemas.Dislike,
     db: Session,
+    dislike_item_id: int,
     dislike_user_id: int,
 ):
 
-    new_dislike = models.Dislike(
+    new = models.Dislike(
         **dislike_in.dict(),
         dislike_user_id=dislike_user_id,
+        dislike_item_id=dislike_item_id,
     )
-    db.add(new_dislike)
+    db.add(new)
     db.commit()
-    db.refresh(new_dislike)
+    db.refresh(new)
 
-    return new_dislike
+    return new
 
 
 # ...
