@@ -11,6 +11,11 @@ class ItemBase(BaseModel):
     image_url: UploadFile
 
 
+class ImgDel(BaseModel):
+    image_url: UploadFile
+    modified_at: datetime = None
+
+
 class ItemCreate(ItemBase):
     created_at: datetime = None
 

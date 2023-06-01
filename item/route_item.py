@@ -1,6 +1,6 @@
 
 from datetime import datetime
-
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import (
@@ -90,13 +90,13 @@ async def create_item(
 
 
 @router.get("/update-item/{id}")
-def get_update(
+async def get_update(
     id: int,
     request: Request,
     current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
 ):
-    obj = views.retreive_item(id=id, db=db)
+    obj = await views.retreive_item(id=id, db=db)
     if obj.owner_item_id == current_user.id:
         return templates.TemplateResponse(
             "item/update.html",
@@ -124,9 +124,17 @@ async def update(
     description: str = Form(...),
     category: str = Form(""),
     image_url: UploadFile = File(""),
+    delete_bool: bool = Form(True),
     modified_at: datetime = datetime.now(),
 ):
 
+    obj = await views.retreive_item(id=id, db=db)
+    print(f"image_url.. {obj.image_url}")
+
+    img_del = schemas.ImgDel(
+        image_url=image_url,
+        modified_at=modified_at,
+    )
     img = schemas.ItemImgUpdate(
         title=title,
         description=description,
@@ -143,10 +151,27 @@ async def update(
         await views.update_item(
             id=id, obj_in=i, db=db, modified_at=modified_at
         )
+        print(f"url..! .{obj.image_url}")
+
+
+        if delete_bool == True:
+
+            if Path(f".{obj.image_url}").exists():
+                Path.unlink(f".{obj.image_url}")
+
+            await views.img_del(
+                id=id, obj_in=img_del, db=db, image_url="", modified_at=modified_at
+            )
+
+            return responses.RedirectResponse(
+                f"/item-detail/{id }",
+                status_code=status.HTTP_302_FOUND,
+            )
         return responses.RedirectResponse(
             f"/item-detail/{id }",
             status_code=status.HTTP_302_FOUND,
         )
+
 
     upload = await views.img_creat(category, image_url)
     await views.img_update_item(
@@ -175,11 +200,11 @@ def list_item_delete(
 
 
 @router.get("/delete-item/{id}")
-def get_delete(
+async def get_delete(
     id: int, request: Request, db: Session = Depends(get_db)
 ):
 
-    obj = views.retreive_item(id=id, db=db)
+    obj = await views.retreive_item(id=id, db=db)
 
     return templates.TemplateResponse(
         "item/delete.html", {"request": request, "obj": obj}
@@ -192,7 +217,7 @@ async def delete_item(
     current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
 ):
-    obj = views.retreive_item(id=id, db=db)
+    obj = await views.retreive_item(id=id, db=db)
 
     if obj.owner_item_id == current_user.id or current_user.is_admin:
         await views.item_delete(id=id, db=db)
@@ -223,12 +248,12 @@ def item_list(
 
 
 @router.get("/item-detail/{id}")
-def item_detail(
+async def item_detail(
     id: int,
     request: Request,
     db: Session = Depends(get_db),
 ):
-    obj = views.retreive_item(id=id, db=db)
+    obj = await views.retreive_item(id=id, db=db)
 
     # ...
     cmt_list = db.query(

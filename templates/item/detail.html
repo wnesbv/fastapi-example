@@ -17,10 +17,12 @@
                 <sup>aulior</sup>
                 <li class="list-group-item">{{ obj.owner_item_id }}</li>
                 {% if obj.image_url %}
-                <sup>image</sup>
-                <li class="list-group-item">
-                    <img src="{{ obj.image_url }}" alt="img" />
-                </li>
+                    <li class="list-group-item">
+                    <figure>
+                        <figcaption><sup>image</sup></figcaption>
+                        <img src="{{ obj.image_url }}" alt="img" />
+                    </figure>
+                    </li>
                 {% endif %}
             </ul>
         </div>

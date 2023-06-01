@@ -46,6 +46,27 @@ async def create_new_item(
 # ...update
 
 
+async def img_del(
+    id: int,
+    obj_in: schemas.ImgDel,
+    db: Session,
+    image_url: str,
+    modified_at: datetime,
+):
+    existing_item = db.query(
+        models.Item
+    ).filter(models.Item.id == id)
+
+    obj_in.__dict__.update(
+        image_url=image_url,
+        modified_at=modified_at,
+    )
+    existing_item.update(obj_in.__dict__)
+    db.commit()
+
+    return existing_item
+
+
 async def img_update_item(
     id: int,
     obj_in: schemas.ItemImgUpdate,
@@ -84,7 +105,10 @@ async def update_item(
     db.commit()
 
     return existing_item
-    # ...
+
+
+# ...
+
 
 async def item_delete(
     id: int,
@@ -99,6 +123,18 @@ async def item_delete(
 
 
 # ...
+
+
+async def retreive_item(
+    id: int,
+    db: Session
+):
+
+    obj = db.query(
+        models.Item
+    ).filter(models.Item.id == id).first()
+
+    return obj
 
 
 def list_item(db: Session):
@@ -119,19 +155,7 @@ def list_user_item(
     return obj_list
 
 
-def retreive_item(
-    id: int,
-    db: Session
-):
-
-    obj = db.query(
-        models.Item
-    ).filter(models.Item.id == id).first()
-
-    return obj
-
-
-# ...img
+# ...img UploadFile
 
 
 async def img_creat(
