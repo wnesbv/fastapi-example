@@ -15,6 +15,7 @@ from trivia import route_trivia
 from user import route_user
 from vote import route_vote
 from api import router_api
+from dump_csv import router_csv
 
 
 app = FastAPI(
@@ -31,6 +32,7 @@ app.include_router(route_trivia.router)
 app.include_router(route_user.router)
 app.include_router(route_vote.router)
 app.include_router(router_api.router)
+app.include_router(router_csv.router)
 
 
 if __name__ == "__main__":

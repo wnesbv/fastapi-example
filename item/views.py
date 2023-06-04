@@ -1,6 +1,8 @@
 import os
 from datetime import datetime
 
+from pathlib import Path, PurePosixPath
+
 from fastapi import (
     HTTPException,
     APIRouter,
@@ -14,7 +16,6 @@ from fastapi import (
 )
 
 from sqlalchemy.orm import Session
-from pathlib import Path, PurePosixPath
 
 from models import models
 from item import schemas
@@ -107,7 +108,7 @@ async def update_item(
     return existing_item
 
 
-# ...
+# ...delete
 
 
 async def item_delete(
@@ -122,7 +123,7 @@ async def item_delete(
     return True
 
 
-# ...
+# ...list
 
 
 async def retreive_item(
@@ -150,7 +151,7 @@ def list_user_item(
 ):
     obj_list = db.query(
         models.Item
-    ).filter(models.Item.owner_item_id == owner_item_id)
+    ).filter(models.Item.owner_item_id == owner_item_id).all()
 
     return obj_list
 

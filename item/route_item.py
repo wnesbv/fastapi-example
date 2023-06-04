@@ -73,11 +73,9 @@ async def create_item(
     )
 
     upload = await views.img_creat(category, image_url)
-    original = upload
-    removed = original.replace(".", "", 1)
 
     obj = await views.create_new_item(
-        db=db, obj_in=i, image_url=removed, owner_item_id=current_user.id,
+        db=db, obj_in=i, image_url=upload, owner_item_id=current_user.id,
     )
 
     return responses.RedirectResponse(
@@ -124,7 +122,7 @@ async def update(
     description: str = Form(...),
     category: str = Form(""),
     image_url: UploadFile = File(""),
-    delete_bool: bool = Form(True),
+    delete_bool: bool = Form(False),
     modified_at: datetime = datetime.now(),
 ):
 
@@ -154,7 +152,7 @@ async def update(
         print(f"url..! .{obj.image_url}")
 
 
-        if delete_bool == True:
+        if delete_bool is True:
 
             if Path(f".{obj.image_url}").exists():
                 Path.unlink(f".{obj.image_url}")
@@ -230,7 +228,7 @@ async def delete_item(
     )
 
 
-# ...
+# ...list
 
 
 @router.get("/item-list")
@@ -245,6 +243,26 @@ def item_list(
     return templates.TemplateResponse(
         "item/list.html", {"request": request, "obj_list": obj_list, "msg": msg}
     )
+
+
+@router.get("/list-user-item")
+def user_item_list(
+    request: Request,
+    current_user: Annotated[EmailStr, Depends(get_active_user)],
+    db: Session = Depends(get_db),
+    msg: str = None
+):
+
+    obj_list = views.list_user_item(
+        db=db, owner_item_id=current_user.id
+    )
+
+    return templates.TemplateResponse(
+        "item/list.html", {"request": request, "obj_list": obj_list, "msg": msg}
+    )
+
+
+# ...detail
 
 
 @router.get("/item-detail/{id}")
