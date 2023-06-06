@@ -1,5 +1,6 @@
 
 from datetime import datetime
+
 from pydantic import BaseModel
 
 
@@ -8,11 +9,11 @@ class CommentBase(BaseModel):
 
 
 class CmtCreate(CommentBase):
-    created_at: datetime = None
+    created_at: datetime
 
 
 class CmtUpdate(CommentBase):
-    modified_at: datetime = None
+    modified_at: datetime
 
 
 class Comment(CommentBase):

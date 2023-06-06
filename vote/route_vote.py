@@ -48,10 +48,10 @@ def get_like_create(
 
 @router.post("/like/{id}")
 async def like_create(
-    id: str,
+    id: int,
     current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
-    upvote: bool = Form(True),
+    upvote: bool = True,
     created_at: datetime = datetime.now(),
 ):
 
@@ -107,7 +107,7 @@ async def dislike_create(
     id: str,
     current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
-    downvote: bool = Form(False),
+    downvote: bool = False,
     created_at: datetime = datetime.now(),
 ):
 

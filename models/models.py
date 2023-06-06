@@ -43,7 +43,7 @@ class Item(Base):
     modified_at = Column(DateTime, nullable=True)
     # ...
     owner_item_id: Mapped[int] = mapped_column(
-        ForeignKey("user_u.id", ondelete="CASCADE")
+        ForeignKey("user_u.id", ondelete="CASCADE"), nullable=False
     )
     # ...
     item_user: Mapped["User"] = relationship(back_populates="user_item")
@@ -64,10 +64,10 @@ class Comment(Base):
     modified_at = Column(DateTime, nullable=True)
     # ...
     cmt_user_id: Mapped[int] = mapped_column(
-        ForeignKey("user_u.id", ondelete="CASCADE")
+        ForeignKey("user_u.id", ondelete="CASCADE"), nullable=False
     )
     cmt_item_id: Mapped[int] = mapped_column(
-        ForeignKey("item_i.id", ondelete="CASCADE")
+        ForeignKey("item_i.id", ondelete="CASCADE"), nullable=False
     )
     # ...
     cmt_user: Mapped["User"] = relationship(back_populates="user_cmt")
@@ -83,8 +83,8 @@ class Comment(Base):
 class Like(Base):
     __tablename__ = "like_l"
 
-    upvote = Column(Boolean, nullable=True)
-    created_at = Column(DateTime, nullable=True)
+    upvote = Column(Boolean, default=True)
+    created_at = Column(DateTime, nullable=False)
     # ...
     like_user_id: Mapped[int] = mapped_column(
         ForeignKey("user_u.id", ondelete="CASCADE"), primary_key=True
@@ -103,8 +103,8 @@ class Like(Base):
 class Dislike(Base):
     __tablename__ = "dislike_d"
 
-    downvote = Column(Boolean, nullable=True)
-    created_at = Column(DateTime, nullable=True)
+    downvote = Column(Boolean, default=False)
+    created_at = Column(DateTime, nullable=False)
     # ...
     dislike_user_id: Mapped[int] = mapped_column(
         ForeignKey("user_u.id", ondelete="CASCADE"), primary_key=True

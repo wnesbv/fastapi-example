@@ -28,7 +28,7 @@ templates = Jinja2Templates(directory="templates")
 router = APIRouter(include_in_schema=False)
 
 
-@router.get("/register", response_model=user_schemas.UserRegister)
+@router.get("/register")
 def get_register(request: Request):
 
     return templates.TemplateResponse(
@@ -36,7 +36,7 @@ def get_register(request: Request):
     )
 
 
-@router.post("/register", response_model=user_schemas.UserCreate)
+@router.post("/register")
 async def register(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -231,7 +231,7 @@ async def reset_password_confirm(
 
 
 # ...
-@router.get("/me", response_model=user_schemas.User)
+@router.get("/me")
 def get_user_profile(
     request: Request,
     current_user: Annotated[EmailStr, Depends(get_active_user)],

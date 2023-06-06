@@ -8,7 +8,7 @@ class LikeBase(BaseModel):
     upvote: bool
 
 class LikeChoose(LikeBase):
-    created_at: datetime = None
+    created_at: datetime
 
 
 class Like(LikeBase):
@@ -29,7 +29,7 @@ class DislikeBase(BaseModel):
 
 
 class DislikeChoose(DislikeBase):
-    created_at: datetime = None
+    created_at: datetime
 
 
 class Dislike(DislikeBase):

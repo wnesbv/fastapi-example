@@ -28,11 +28,8 @@ async def create_new_item(
     owner_item_id: int,
 ):
 
-    details_dict = obj_in.dict()
-    del details_dict["image_url"]
-
     new = models.Item(
-        **details_dict,
+        **obj_in.dict(),
         image_url=image_url,
         owner_item_id=owner_item_id,
     )

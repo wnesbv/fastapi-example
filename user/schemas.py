@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta
-from typing import List, Any, Dict, Literal
+
+from datetime import datetime
 
 from pydantic import BaseModel, EmailStr
 
@@ -8,30 +8,42 @@ class UserBase(BaseModel):
     email: EmailStr
 
 
-class UserRegister(UserBase):
-    password: str
+class UserRegister(BaseModel):
+    email: EmailStr
 
 
 class UserCreate(UserBase):
     password: str
-    created_at: datetime = None
+    created_at: datetime
 
 
 class UserUpdate(BaseModel):
     name: str
     password: str
-    modified_at: datetime = None
+    modified_at: datetime
+
+
+class GetUser(UserBase):
+    id: int
+    password: str
+    email_verified: bool
+    is_active: bool
+    is_admin: bool
+
+    class Config:
+        orm_mode = True
 
 
 class User(UserBase):
     id: int
+    password: str
     email_verified: bool
     is_active: bool
     is_admin: bool
-    user_item: list["Item"] = []
-    user_cmt: list["Comment"] = []
-    user_like: list["Like"] = []
-    user_dislike: list["Dislike"] = []
+    user_item: list["Item"] | None = None
+    user_cmt: list["Comment"] | None = None
+    user_like: list["Like"] | None = None
+    user_dislike: list["Dislike"] | None = None
 
     class Config:
         orm_mode = True

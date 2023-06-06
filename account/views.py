@@ -69,12 +69,8 @@ async def create_user(
             status.HTTP_400_BAD_REQUEST, "User with this email already exists"
         )
 
-    user_dict = user.dict()
-
-    del user_dict["password"]
-
     new = models.User(
-        **user_dict, password = auth.hash_password(user.password)
+        **user.dict(), password = auth.hash_password(user.password)
     )
     db.add(new)
     db.commit()

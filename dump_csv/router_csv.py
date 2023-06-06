@@ -1,8 +1,7 @@
-
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated
-import csv
+import os, csv
 from pydantic import EmailStr
 
 from sqlalchemy import delete
@@ -39,11 +38,9 @@ BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 def query_user_id(
     owner_item_id: int,
     db: Session = Depends(get_db),
-
 ):
     stmt = db.execute(
-        select(models.Item)
-        .where(models.Item.owner_item_id == owner_item_id)
+        select(models.Item).where(models.Item.owner_item_id == owner_item_id)
     )
     result = stmt.scalars().all()
     return result
@@ -54,15 +51,10 @@ def export_csv(
     current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
 ):
-
-    detal = query_user_id(
-        db=db, owner_item_id=current_user.id
-    )
+    detal = query_user_id(db=db, owner_item_id=current_user.id)
 
     file_time = datetime.now()
-    directory = (
-        BASE_DIR / f"static/csv/{file_time.strftime('%Y-%m-%d-%H-%M-%S')}.csv"
-    )
+    directory = BASE_DIR / f"static/csv/{file_time.strftime('%Y-%m-%d-%H-%M-%S')}.csv"
     filename = f"{file_time.strftime('%Y-%m-%d-%H-%M-%S')}.csv"
 
     with open(directory, "w", encoding="utf-8") as csvfile:
@@ -92,8 +84,7 @@ def export_csv(
             )
 
         return responses.RedirectResponse(
-            f"/static/csv/{filename}",
-            status_code=status.HTTP_302_FOUND
+            f"/static/csv/{filename}", status_code=status.HTTP_302_FOUND
         )
 
 
@@ -105,28 +96,34 @@ async def ge_import_csv(
     request: Request,
     db: Session = Depends(get_db),
 ):
+    return templates.TemplateResponse("import_csv.html", {"request": request})
 
-    return templates.TemplateResponse(
-        "import_csv.html",
-        {"request": request}
-    )
 
+import tempfile
 
 
 @router.post("/import-csv")
 def import_csv(
     current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
-    url_file: UploadFile = File(...),
+    url_f: UploadFile = File(...),
 ):
-
     db.query(models.Item).filter(models.Item.owner_item_id == current_user.id).delete()
 
-    save_path = "./static/csv"
-    file_path = f"{save_path}/{url_file.filename}"
+    # save_path = "./static/csv"
+    # file_path = f"{save_path}/{url_file.filename}"
 
-    with open(file_path, "r", encoding="utf-8") as csvfile:
+    temp = tempfile.NamedTemporaryFile(delete=False)
+    print("temp name..", temp.name)
 
+    contents = url_f.file.read()
+
+    with temp as csvf:
+        csvf.write(contents)
+
+    url_f.file.close()
+
+    with open(temp.name, "r", encoding="utf-8") as csvfile:
         obj = [
             models.Item(
                 **{
@@ -140,12 +137,13 @@ def import_csv(
             )
             for i in csv.DictReader(csvfile)
         ]
-
         # ..
         db.add_all(obj)
         db.commit()
         # ..
+        csvfile.close()
+        Path.unlink(f"{temp.name}")
+
         return responses.RedirectResponse(
-            "/item-list",
-            status_code=status.HTTP_302_FOUND
+            "/item-list", status_code=status.HTTP_302_FOUND
         )

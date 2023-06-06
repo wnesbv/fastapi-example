@@ -1,5 +1,5 @@
+
 from datetime import datetime
-from typing import List, Any, Dict
 
 from pydantic import BaseModel
 from fastapi import UploadFile
@@ -8,35 +8,35 @@ from fastapi import UploadFile
 class ItemBase(BaseModel):
     title: str
     description: str
-    image_url: UploadFile
 
 
 class ImgDel(BaseModel):
     image_url: UploadFile
-    modified_at: datetime = None
+    modified_at: datetime
 
 
 class ItemCreate(ItemBase):
-    created_at: datetime = None
+    created_at: datetime
 
 
 class ItemUpdate(BaseModel):
     title: str
     description: str
-    modified_at: datetime = None
+    modified_at: datetime
 
 
 class ItemImgUpdate(ItemBase):
-    modified_at: datetime = None
+    modified_at: datetime
 
 
 class Item(ItemBase):
     id: int
+    image_url: UploadFile | None = None
     owner_item_id: int
     item_user: list["User"] = []
-    item_cmt: list["Comment"] = []
-    item_like: list["Like"] = []
-    item_dislike: list["Dislike"] = []
+    item_cmt: list["Comment"] | None = None
+    item_like: list["Like"] | None = None
+    item_dislike: list["Dislike"] | None = None
 
     class Config:
         orm_mode = True

@@ -1,5 +1,5 @@
 
-from fastapi import responses, Request, Depends, HTTPException, status
+from fastapi import Request, Depends, HTTPException, status
 
 from sqlalchemy.orm import Session
 
@@ -40,7 +40,7 @@ def get_user(
 
 
 def get_active_user(
-    current_user: schemas.User = Depends(get_user)
+    current_user: schemas.GetUser = Depends(get_user)
 ):
 
     if not current_user.email_verified:

@@ -4,7 +4,7 @@ import bcrypt
 
 from sqlalchemy.orm import Session
 
-from models.models import User, Item, Comment
+from models.models import User, Item, Comment, Like, Dislike
 from config.storage_config import Base, engine
 
 
@@ -48,15 +48,27 @@ def on_app_startup():
                     created_at=datetime.now()
                 ),
                 Comment(
-                    opinion_expressed="01 (one) item-opinion description",
+                    opinion_expressed="01 (one) opinion description",
                     cmt_user_id=1,
                     cmt_item_id=1,
                     created_at=datetime.now()
                 ),
                 Comment(
-                    opinion_expressed="01 (two) item-opinion description",
+                    opinion_expressed="01 (two) opinion description",
                     cmt_user_id=2,
                     cmt_item_id=2,
+                    created_at=datetime.now()
+                ),
+                Like(
+                    upvote=True,
+                    like_user_id=1,
+                    like_item_id=1,
+                    created_at=datetime.now()
+                ),
+                Dislike(
+                    downvote=False,
+                    dislike_user_id=2,
+                    dislike_item_id=2,
                     created_at=datetime.now()
                 ),
             ]

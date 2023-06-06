@@ -1,4 +1,6 @@
 
+from typing import Annotated
+
 from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response, HTTPException
 
 from pydantic import EmailStr
@@ -97,9 +99,12 @@ def rest_password_confirm(
 
 
 # ...
-@router.get("/me", response_model=user_schemas.User)
+
+
+@router.get("/me", response_model=user_schemas.GetUser)
 def get_user_profile(
-    current_user: user_schemas.User = Depends(get_active_user)
+    #current_user: user_schemas.User = Depends(get_active_user)
+    current_user: Annotated[EmailStr, Depends(get_active_user)],
 ):
 
     return current_user

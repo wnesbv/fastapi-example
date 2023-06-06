@@ -1,18 +1,23 @@
+
 from datetime import datetime
-from typing import List, Any, Dict
 
 from pydantic import BaseModel
 from fastapi import UploadFile
 
 
-class ExportCSV(BaseModel):
+
+
+class ImportCSV(BaseModel):
     id: int
     title: str
     description: str
-    image_url: UploadFile
+    image_url: str
     created_at: datetime = None
-    modified_at: datetime = None
     owner_item_id: int
+
+
+class ExportCSV(ImportCSV):
+    modified_at: datetime = None
 
 
 class BaseCSV(ExportCSV):
