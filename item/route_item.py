@@ -47,12 +47,12 @@ def get_create_item(request: Request):
 @router.post("/create-item")
 async def create_item(
     current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
     title: str = Form(...),
     description: str = Form(...),
-    category: str = Form(...),
-    image_url: UploadFile = File(...),
+    category: str = Form(""),
+    image_url: UploadFile = File(""),
     created_at: datetime = datetime.now(),
+    db: Session = Depends(get_db),
 ):
     exists = db.query(
         models.Item
@@ -68,17 +68,29 @@ async def create_item(
         #     detail="name already registered..!"
         # )
 
-    upload = await views.img_creat(category, image_url)
-
     i = schemas.ItemCreate(
+        title=title, description=description, created_at=created_at
+    )
+    img = schemas.ItemCreate(
         title=title, description=description, image_url=image_url, created_at=created_at
     )
-    obj = await views.create_new_item(
-        db=db, obj_in=i, image_url=upload, owner_item_id=current_user.id,
+
+    if image_url.filename == "" or category == "":
+        obj = await views.create_not_img_item(
+            owner_item_id=current_user.id, db=db, obj_in=i
+        )
+        return responses.RedirectResponse(
+            f"/item-detail/{ obj.id }/?msg=sucesso..!",
+            status_code=status.HTTP_302_FOUND
+        )
+
+    upload = await views.img_creat(category, image_url)
+    obj_img = await views.create_new_item(
+        image_url=upload, owner_item_id=current_user.id, db=db, obj_in=img
     )
 
     return responses.RedirectResponse(
-        f"/item-detail/{ obj.id }/?msg=sucesso..!",
+        f"/item-detail/{ obj_img.id }/?msg=sucesso..!",
         status_code=status.HTTP_302_FOUND
     )
 
@@ -116,13 +128,13 @@ async def get_update(
 @router.post("/update-item/{id}")
 async def update(
     id: int,
-    db: Session = Depends(get_db),
     title: str = Form(...),
     description: str = Form(...),
     category: str = Form(""),
     image_url: UploadFile = File(""),
     delete_bool: bool = Form(False),
     modified_at: datetime = datetime.now(),
+    db: Session = Depends(get_db),
 ):
 
     obj = await views.retreive_item(id=id, db=db)
@@ -146,7 +158,7 @@ async def update(
 
     if image_url.filename == "" or category == "":
         await views.update_item(
-            id=id, obj_in=i, db=db, modified_at=modified_at
+            id=id, modified_at=modified_at, db=db, obj_in=i
         )
         print(f"url..! .{obj.image_url}")
 
@@ -157,7 +169,7 @@ async def update(
                 Path.unlink(f".{obj.image_url}")
 
             await views.img_del(
-                id=id, obj_in=img_del, db=db, image_url="", modified_at=modified_at
+                id=id, image_url="", modified_at=modified_at,  db=db, obj_in=img_del
             )
 
             return responses.RedirectResponse(
@@ -172,7 +184,7 @@ async def update(
 
     upload = await views.img_creat(category, image_url)
     await views.img_update_item(
-        id=id, obj_in=img, db=db, image_url=upload, modified_at=modified_at
+        id=id, image_url=upload, modified_at=modified_at, db=db, obj_in=img
     )
     return responses.RedirectResponse(
         f"/item-detail/{id }",
@@ -233,8 +245,8 @@ async def delete_item(
 @router.get("/item-list")
 def item_list(
     request: Request,
+    msg: str = None,
     db: Session = Depends(get_db),
-    msg: str = None
 ):
 
     obj_list = views.list_item(db=db)
@@ -248,12 +260,12 @@ def item_list(
 def user_item_list(
     request: Request,
     current_user: Annotated[EmailStr, Depends(get_active_user)],
+    msg: str = None,
     db: Session = Depends(get_db),
-    msg: str = None
 ):
 
     obj_list = views.list_user_item(
-        db=db, owner_item_id=current_user.id
+        owner_item_id=current_user.id, db=db
     )
 
     return templates.TemplateResponse(

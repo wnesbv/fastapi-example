@@ -22,15 +22,32 @@ from item import schemas
 
 
 async def create_new_item(
-    obj_in: schemas.ItemCreate,
-    db: Session,
     image_url: UploadFile,
     owner_item_id: int,
+    db: Session,
+    obj_in: schemas.ItemCreate,
 ):
 
     new = models.Item(
         **obj_in.dict(),
         image_url=image_url,
+        owner_item_id=owner_item_id,
+    )
+
+    db.add(new)
+    db.commit()
+    db.refresh(new)
+
+    return new
+
+async def create_not_img_item(
+    owner_item_id: int,
+    db: Session,
+    obj_in: schemas.ItemCreate,
+):
+
+    new = models.Item(
+        **obj_in.dict(),
         owner_item_id=owner_item_id,
     )
 
@@ -46,10 +63,10 @@ async def create_new_item(
 
 async def img_del(
     id: int,
-    obj_in: schemas.ImgDel,
-    db: Session,
     image_url: str,
     modified_at: datetime,
+    db: Session,
+    obj_in: schemas.ImgDel,
 ):
     existing_item = db.query(
         models.Item
@@ -67,10 +84,10 @@ async def img_del(
 
 async def img_update_item(
     id: int,
-    obj_in: schemas.ItemImgUpdate,
-    db: Session,
     image_url: str,
     modified_at: datetime,
+    db: Session,
+    obj_in: schemas.ItemImgUpdate,
 ):
     existing_item = db.query(
         models.Item
@@ -88,9 +105,9 @@ async def img_update_item(
 
 async def update_item(
     id: int,
-    obj_in: schemas.ItemUpdate,
-    db: Session,
     modified_at: datetime,
+    db: Session,
+    obj_in: schemas.ItemUpdate,
 ):
     existing_item = db.query(
         models.Item
@@ -144,7 +161,7 @@ def list_item(db: Session):
 
 def list_user_item(
     db: Session,
-    owner_item_id,
+    owner_item_id: int,
 ):
     obj_list = db.query(
         models.Item

@@ -1,7 +1,10 @@
 
+import jwt
 from fastapi import Request, Depends, HTTPException, status
 
-from sqlalchemy.orm import Session
+from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload, contains_eager
+from sqlalchemy.future import select
 
 from user import schemas
 from models import models
@@ -16,11 +19,10 @@ def get_token(
     if not request.cookies.get("access_token"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="no authorization, log in..!"
+            detail="no authorization, log in..!",
         )
     token = request.cookies.get("access_token")
     return token
-
 
 
 def get_user(
@@ -30,9 +32,8 @@ def get_user(
 
     email = auth.decode_token(token)
     print("email", email)
-    user = db.query(models.User).filter(
-        models.User.email == email
-    ).first()
+
+    user = db.query(models.User).filter(models.User.email == email).first()
 
     if not user:
         raise HTTPException(401, "User doesn't exist")
@@ -55,21 +56,20 @@ def get_active_user(
 
 async def update_user(
     id: int,
-    user_details: schemas.UserUpdate,
-    db: Session,
     current_user: str,
     password: str,
+    db: Session,
+    user_details: schemas.UserUpdate,
 ):
 
-    existing_user = db.query(
-        models.User
-    ).filter(models.User.id == current_user.id)
+    existing_user = db.query(models.User).filter(models.User.id == current_user.id)
 
     user_details.__dict__.update(password=password)
     existing_user.update(user_details.__dict__)
     db.commit()
 
     return existing_user
+
 
 # ...
 
@@ -84,5 +84,19 @@ def list_user(db: Session):
 def retreive_user(id: int, db: Session):
 
     obj = db.query(models.User).filter(models.User.id == id).first()
+
+    return obj
+
+
+def count_user_item(id: int, db: Session):
+    obj = (
+        db.execute(
+            select(models.Item.id)
+            .join(models.User.user_item)
+            .where(models.Item.owner_item_id == id)
+        )
+        .unique()
+        .all()
+    )
 
     return obj

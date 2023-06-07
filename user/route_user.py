@@ -25,7 +25,7 @@ router = APIRouter(include_in_schema=False)
 
 @router.get("/update-user/{id}")
 def get_update(
-    id: str,
+    id: int,
     request: Request,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(
@@ -56,7 +56,7 @@ def get_update(
 
 @router.post("/update-user/{id}")
 async def to_update(
-    id: str,
+    id: int,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(
         views.get_active_user
@@ -103,17 +103,20 @@ def user_list(
 
 @router.get("/user-detail/{id}")
 def user_detail(
-    id: str,
+    id: int,
     request: Request,
     db: Session = Depends(get_db),
 ):
 
     obj = views.retreive_user(id=id, db=db)
-
+    obj_item = views.count_user_item(id=id, db=db)
+    count_item = len(obj_item)
     return templates.TemplateResponse(
         "user/detail.html",
         {
             "request": request,
             "obj": obj,
+            "obj_item": obj_item,
+            "count_item": count_item,
         }
     )

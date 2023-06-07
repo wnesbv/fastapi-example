@@ -28,6 +28,17 @@
                         </span>
                         <span class="w-75">{{ obj.email }}</span>
                     </li>
+                    <li class="list-group-item">
+                        <span>
+                            <span>user in items: </span>
+                        </span>
+                        {% for obj in obj_item %}
+                        <span class="w-75"><sub>id</sub> {{ obj.id }} | </span>
+                        {% endfor %}
+                        <sub class="mx-2">count item total:</sub>
+                        <span>{{ count_item }}</span>
+                        
+                    </li>
                 </ul>
             </div>
         </div>
