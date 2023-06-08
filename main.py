@@ -14,7 +14,7 @@ from item import route_item
 from trivia import route_trivia
 from user import route_user
 from vote import route_vote
-from api import auth, user, item as tm_item
+from api import auth, user, item as tm_item, comment as tm_comment
 from dump_csv import router_csv
 
 
@@ -35,6 +35,7 @@ app.include_router(router_csv.router)
 app.include_router(auth.router)
 app.include_router(user.router)
 app.include_router(tm_item.router)
+app.include_router(tm_comment.router)
 
 
 if __name__ == "__main__":

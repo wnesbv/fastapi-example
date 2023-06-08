@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 
 from models import models
-from item import views, schemas
+from item import schemas
 
 from config.dependency import get_db
 from user.views import get_active_user
@@ -28,15 +28,15 @@ def item_list(
 
     obj = [
         schemas.ListItem(
-            id=t.id,
-            title=t.title,
-            description=t.description,
-            image_url=t.image_url,
-            created_at=t.created_at,
-            modified_at=t.modified_at,
-            owner_item_id=t.owner_item_id,
+            id=i.id,
+            title=i.title,
+            description=i.description,
+            image_url=i.image_url,
+            created_at=i.created_at,
+            modified_at=i.modified_at,
+            owner_item_id=i.owner_item_id,
         )
-        for t in obj_list
+        for i in obj_list
     ]
     return obj
 
@@ -56,12 +56,12 @@ def item_id(
                 models.User.is_admin,
             )
             .join(models.Item.item_user)
-            .where(models.Item.owner_item_id == id)
         )
         .unique()
         .all()
     )
     print("obj_tm..", obj_tm)
+
     obj_cm = (
         db.execute(
             select(
@@ -71,24 +71,24 @@ def item_id(
                 models.Comment.cmt_item_id,
             )
             .join(models.Item.item_cmt)
-            .where(models.Comment.cmt_item_id == id)
         )
         .unique()
         .all()
     )
     print("obj_cm..", obj_cm)
+
     obj_l = (
         db.execute(
             select(
                 models.Like.upvote, models.Like.like_user_id, models.Like.like_item_id
             )
             .join(models.Item.item_like)
-            .where(models.Like.like_item_id == id)
         )
         .unique()
         .all()
     )
     print("obj_l..", obj_l)
+
     obj_dl = (
         db.execute(
             select(
@@ -97,7 +97,6 @@ def item_id(
                 models.Dislike.dislike_item_id,
             )
             .join(models.Item.item_dislike)
-            .where(models.Dislike.dislike_item_id == id)
         )
         .unique()
         .all()
@@ -139,14 +138,14 @@ def get_user_item(
 
     obj = [
         schemas.ListItem(
-            id=t.id,
-            title=t.title,
-            description=t.description,
-            image_url=t.image_url,
-            created_at=t.created_at,
-            modified_at=t.modified_at,
-            owner_item_id=t.owner_item_id,
+            id=i.id,
+            title=i.title,
+            description=i.description,
+            image_url=i.image_url,
+            created_at=i.created_at,
+            modified_at=i.modified_at,
+            owner_item_id=i.owner_item_id,
         )
-        for t in result
+        for i in result
     ]
     return obj
