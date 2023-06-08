@@ -1,11 +1,9 @@
+
 from __future__ import annotations
-from typing import List
 
-from datetime import datetime
+from sqlalchemy import Boolean, Column, String, Text, ForeignKey, DateTime
 
-from sqlalchemy import Boolean, Column, Integer, String, Text, ForeignKey, DateTime
-
-from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from config.storage_config import Base
 
@@ -23,10 +21,10 @@ class User(Base):
     created_at = Column(DateTime, nullable=True)
     modified_at = Column(DateTime, nullable=True)
     # ...
-    user_item: Mapped[List["Item"]] = relationship(back_populates="item_user")
-    user_cmt: Mapped[List["Comment"]] = relationship(back_populates="cmt_user")
-    user_like: Mapped[List["Like"]] = relationship(back_populates="like_user")
-    user_dislike: Mapped[List["Dislike"]] = relationship(back_populates="dislike_user")
+    user_item: Mapped[list["Item"]] = relationship(back_populates="item_user")
+    user_cmt: Mapped[list["Comment"]] = relationship(back_populates="cmt_user")
+    user_like: Mapped[list["Like"]] = relationship(back_populates="like_user")
+    user_dislike: Mapped[list["Dislike"]] = relationship(back_populates="dislike_user")
 
     def __str__(self):
         return str(self.name)

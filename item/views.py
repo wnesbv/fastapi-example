@@ -5,17 +5,12 @@ from pathlib import Path, PurePosixPath
 
 from fastapi import (
     HTTPException,
-    APIRouter,
-    Depends,
-    Request,
-    responses,
-    Form,
-    File,
     UploadFile,
     status,
 )
 
 from sqlalchemy.orm import Session
+from sqlalchemy.future import select
 
 from models import models
 from item import schemas
@@ -145,16 +140,17 @@ async def retreive_item(
     db: Session
 ):
 
-    obj = db.query(
-        models.Item
-    ).filter(models.Item.id == id).first()
+    stmt = db.execute(
+        select(models.Item).where(models.Item.id == id)
+    )
+    result = stmt.scalars().first()
 
-    return obj
+    return result
 
 
 def list_item(db: Session):
 
-    obj_list = db.query(models.Item).all()
+    obj_list = db.execute(select(models.Item)).scalars().all()
 
     return obj_list
 
@@ -163,11 +159,15 @@ def list_user_item(
     db: Session,
     owner_item_id: int,
 ):
-    obj_list = db.query(
-        models.Item
-    ).filter(models.Item.owner_item_id == owner_item_id).all()
 
-    return obj_list
+    stmt = db.execute(
+        select(models.Item)
+        .where(models.Item.owner_item_id == owner_item_id)
+    )
+    result = stmt.scalars().all()
+
+
+    return result
 
 
 # ...img UploadFile

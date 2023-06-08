@@ -29,20 +29,29 @@ class ItemImgUpdate(ItemBase):
     modified_at: datetime
 
 
-class Item(ItemBase):
+class ListItem(ItemBase):
     id: int
     image_url: UploadFile | None = None
     owner_item_id: int
-    item_user: list["User"] = []
-    item_cmt: list["Comment"] | None = None
-    item_like: list["Like"] | None = None
-    item_dislike: list["Dislike"] | None = None
 
     class Config:
         orm_mode = True
 
 
-from user.schemas import User
+class Item(ItemBase):
+    id: int
+    image_url: UploadFile | None = None
+    owner_item_id: int
+    item_user: list["IUser"] = []
+    item_cmt: list["Comment"] = []
+    item_like: list["Like"] = []
+    item_dislike: list["Dislike"] = []
+
+    class Config:
+        orm_mode = True
+
+
+from user.schemas import IUser
 from comment.schemas import Comment
 from vote.schemas import Like, Dislike
 

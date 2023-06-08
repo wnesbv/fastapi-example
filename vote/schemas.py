@@ -14,7 +14,7 @@ class LikeChoose(LikeBase):
 class Like(LikeBase):
     like_item_id: int
     like_user_id: int
-    like_user: list["User"] = []
+    like_user: list["IUser"] = []
     like_item: list["Item"] = []
 
     class Config:
@@ -35,14 +35,14 @@ class DislikeChoose(DislikeBase):
 class Dislike(DislikeBase):
     dislike_item_id: int
     dislike_user_id: int
-    dislike_user: list["User"] = []
+    dislike_user: list["IUser"] = []
     dislike_item: list["Item"] = []
 
     class Config:
         orm_mode = True
 
 
-from user.schemas import User
+from user.schemas import IUser
 from item.schemas import Item
 
 Like.update_forward_refs()

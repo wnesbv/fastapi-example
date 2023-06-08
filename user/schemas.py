@@ -34,16 +34,30 @@ class GetUser(UserBase):
         orm_mode = True
 
 
+class IUser(UserBase):
+    id: int
+    email_verified: bool
+    is_active: bool
+    is_admin: bool
+    user_item: list["Item"] = []
+    user_cmt: list["Comment"] = []
+    user_like: list["Like"] = []
+    user_dislike: list["Dislike"] = []
+
+    class Config:
+        orm_mode = True
+
+
 class User(UserBase):
     id: int
     password: str
     email_verified: bool
     is_active: bool
     is_admin: bool
-    user_item: list["Item"] | None = None
-    user_cmt: list["Comment"] | None = None
-    user_like: list["Like"] | None = None
-    user_dislike: list["Dislike"] | None = None
+    user_item: list["Item"] = []
+    user_cmt: list["Comment"] = []
+    user_like: list["Like"] = []
+    user_dislike: list["Dislike"] = []
 
     class Config:
         orm_mode = True
@@ -54,3 +68,4 @@ from comment.schemas import Comment
 from vote.schemas import Like, Dislike
 
 User.update_forward_refs()
+IUser.update_forward_refs()
