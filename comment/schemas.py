@@ -29,14 +29,14 @@ class Comment(CommentBase):
     id: int
     cmt_user_id: int
     cmt_item_id: int
-    cmt_user: list["IUser"] = []
-    cmt_item: list["Item"] = []
+    cmt_user: list["UiUser"] = []
+    cmt_item: list["UiItem"] = []
 
     class Config:
         orm_mode = True
 
 
-from user.schemas import IUser
-from item.schemas import Item
+from user.schemas import UiUser
+from item.schemas import UiItem
 
 Comment.update_forward_refs()

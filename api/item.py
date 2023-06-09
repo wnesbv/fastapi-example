@@ -56,6 +56,7 @@ def item_id(
                 models.User.is_admin,
             )
             .join(models.Item.item_user)
+            .where(models.Item.id == id)
         )
         .unique()
         .all()
@@ -71,6 +72,7 @@ def item_id(
                 models.Comment.cmt_item_id,
             )
             .join(models.Item.item_cmt)
+            .where(models.Item.id == id)
         )
         .unique()
         .all()
@@ -83,6 +85,7 @@ def item_id(
                 models.Like.upvote, models.Like.like_user_id, models.Like.like_item_id
             )
             .join(models.Item.item_like)
+            .where(models.Item.id == id)
         )
         .unique()
         .all()
@@ -97,6 +100,7 @@ def item_id(
                 models.Dislike.dislike_item_id,
             )
             .join(models.Item.item_dislike)
+            .where(models.Item.id == id)
         )
         .unique()
         .all()

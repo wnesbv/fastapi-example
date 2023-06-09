@@ -34,6 +34,15 @@ class GetUser(UserBase):
         orm_mode = True
 
 
+# ...
+class UiUser(UserBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
+
+# ...
 class IUser(UserBase):
     id: int
     email_verified: bool
@@ -67,5 +76,8 @@ from item.schemas import Item
 from comment.schemas import Comment
 from vote.schemas import Like, Dislike
 
-User.update_forward_refs()
+
+UiUser.update_forward_refs()
 IUser.update_forward_refs()
+User.update_forward_refs()
+

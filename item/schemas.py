@@ -38,6 +38,17 @@ class ListItem(ItemBase):
         orm_mode = True
 
 
+# ...
+class UiItem(ItemBase):
+    id: int
+    image_url: UploadFile | None = None
+    owner_item_id: int
+
+    class Config:
+        orm_mode = True
+
+
+# ...
 class Item(ItemBase):
     id: int
     image_url: UploadFile | None = None
@@ -55,4 +66,6 @@ from user.schemas import IUser
 from comment.schemas import Comment
 from vote.schemas import Like, Dislike
 
+
+UiItem.update_forward_refs()
 Item.update_forward_refs()

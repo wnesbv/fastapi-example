@@ -32,6 +32,7 @@ def user_relationship(
                 models.User.is_admin,
             )
             .join(models.Comment.cmt_user)
+            .where(models.Comment.id == id)
         )
         .unique()
         .all()
@@ -47,6 +48,7 @@ def user_relationship(
                 models.Item.owner_item_id,
             )
             .join(models.Comment.cmt_item)
+            .where(models.Comment.id == id)
         )
         .unique()
         .all()
