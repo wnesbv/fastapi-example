@@ -1,5 +1,6 @@
 
 from datetime import datetime
+from typing import Annotated
 from fastapi import (
     APIRouter,
     Depends,
@@ -8,6 +9,8 @@ from fastapi import (
     responses,
     status,
 )
+
+from pydantic import EmailStr
 
 from fastapi.templating import Jinja2Templates
 
@@ -26,12 +29,10 @@ router = APIRouter(include_in_schema=False)
 
 @router.get("/update-user/{id}")
 def get_update(
-    id: int,
     request: Request,
+    id: int,
+    current_user: Annotated[EmailStr, Depends(views.get_active_user)],
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(
-        views.get_active_user
-    ),
 ):
 
     obj = views.retreive_user(id=id, db=db)
@@ -57,14 +58,12 @@ def get_update(
 
 @router.post("/update-user/{id}")
 async def to_update(
+    current_user: Annotated[EmailStr, Depends(views.get_active_user)],
     id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(
-        views.get_active_user
-    ),
     name: str = Form(...),
     password: str = Form(...),
     modified_at: datetime = datetime.now(),
+    db: Session = Depends(get_db),
 ):
 
     user_details = schemas.UserUpdate(
@@ -106,8 +105,8 @@ def user_list(
 
 @router.get("/user-detail/{id}")
 def user_detail(
-    id: int,
     request: Request,
+    id: int,
     db: Session = Depends(get_db),
 ):
 

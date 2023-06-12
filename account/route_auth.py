@@ -77,9 +77,9 @@ def get_login(request: Request):
 async def login(
     request: Request,
     bg_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
     email: str = Form(...),
     password: str = Form(...),
+    db: Session = Depends(get_db),
 ):
 
     user_details = schemas.LoginDetails(
@@ -126,10 +126,10 @@ def get_verification_email(
 
 @router.post("/email-verify-resend")
 async def resend_verification_email(
-    background_tasks: BackgroundTasks,
     requests: Request,
-    db: Session = Depends(get_db),
+    background_tasks: BackgroundTasks,
     email: str = Form(...),
+    db: Session = Depends(get_db),
 ):
     response = await views.resend_verification_email(
         email, background_tasks, requests, db
@@ -151,16 +151,16 @@ def get_reset_password(
 
 @router.post("/reset-password")
 async def post_reset_password(
-    bg_tasks: BackgroundTasks,
     request: Request,
-    db: Session = Depends(get_db),
+    bg_tasks: BackgroundTasks,
     email: str = Form(...),
+    db: Session = Depends(get_db),
 ):
 
     user = await views.get_user_by_email(email, db)
     if user:
         await views.reset_password(
-            bg_tasks=bg_tasks, request=request, email=email
+            background_tasks=bg_tasks, request=request, email=email
         )
         return templates.TemplateResponse(
             "components/successful.html",
@@ -192,10 +192,10 @@ def get_reset_password_confirm(
 
 @router.post("/reset-password-confirm")
 async def reset_password_confirm(
-    token: str,
     request: Request,
-    db: Session = Depends(get_db),
+    token: str,
     password: str = Form(...),
+    db: Session = Depends(get_db),
 ):
 
     user_details = schemas.ResetPasswordDetails(password=password)

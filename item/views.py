@@ -19,8 +19,8 @@ from item import schemas
 async def create_new_item(
     image_url: UploadFile,
     owner_item_id: int,
-    db: Session,
     obj_in: schemas.ItemCreate,
+    db: Session,
 ):
 
     new = models.Item(
@@ -37,8 +37,8 @@ async def create_new_item(
 
 async def create_not_img_item(
     owner_item_id: int,
-    db: Session,
     obj_in: schemas.ItemCreate,
+        db: Session,
 ):
 
     new = models.Item(
@@ -60,8 +60,8 @@ async def img_del(
     id: int,
     image_url: str,
     modified_at: datetime,
-    db: Session,
     obj_in: schemas.ImgDel,
+    db: Session,
 ):
     existing_item = db.query(
         models.Item
@@ -81,8 +81,8 @@ async def img_update_item(
     id: int,
     image_url: str,
     modified_at: datetime,
-    db: Session,
     obj_in: schemas.ItemImgUpdate,
+    db: Session,
 ):
     existing_item = db.query(
         models.Item

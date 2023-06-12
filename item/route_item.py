@@ -77,7 +77,7 @@ async def create_item(
 
     if image_url.filename == "" or category == "":
         obj = await views.create_not_img_item(
-            owner_item_id=current_user.id, db=db, obj_in=i
+            owner_item_id=current_user.id, obj_in=i, db=db,
         )
         return responses.RedirectResponse(
             f"/item-detail/{ obj.id }/?msg=sucesso..!",
@@ -86,7 +86,7 @@ async def create_item(
 
     upload = await views.img_creat(category, image_url)
     obj_img = await views.create_new_item(
-        image_url=upload, owner_item_id=current_user.id, db=db, obj_in=img
+        image_url=upload, owner_item_id=current_user.id, obj_in=img, db=db,
     )
 
     return responses.RedirectResponse(
@@ -100,8 +100,8 @@ async def create_item(
 
 @router.get("/update-item/{id}")
 async def get_update(
-    id: int,
     request: Request,
+    id: int,
     current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
 ):
@@ -158,7 +158,7 @@ async def update(
 
     if image_url.filename == "" or category == "":
         await views.update_item(
-            id=id, modified_at=modified_at, db=db, obj_in=i
+            id=id, modified_at=modified_at, obj_in=i,  db=db,
         )
         print(f"url..! .{obj.image_url}")
 
@@ -169,7 +169,7 @@ async def update(
                 Path.unlink(f".{obj.image_url}")
 
             await views.img_del(
-                id=id, image_url="", modified_at=modified_at,  db=db, obj_in=img_del
+                id=id, image_url="", modified_at=modified_at, obj_in=img_del, db=db,
             )
 
             return responses.RedirectResponse(
@@ -184,7 +184,7 @@ async def update(
 
     upload = await views.img_creat(category, image_url)
     await views.img_update_item(
-        id=id, image_url=upload, modified_at=modified_at, db=db, obj_in=img
+        id=id, image_url=upload, modified_at=modified_at, obj_in=img,  db=db
     )
     return responses.RedirectResponse(
         f"/item-detail/{id }",
