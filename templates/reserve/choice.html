@@ -1,0 +1,139 @@
+
+{% extends "base.html" %}
+{% block title %} choice {% endblock %}
+
+{% block content %}
+
+    <h1 class="container lead my-4">choice item...</h1>
+
+    <div class="container">
+    <div class="card">
+    <ul class="card-header list-group list-group-horizontal">
+
+        <li class="list-group-item">
+            <sup class="float-start">start</sup>
+            <time>
+                {{ time_start.strftime("%d-%m-%Y %H:%M") }}
+            </time>
+        </li>
+        <li class="list-group-item">
+            <sup class="float-start">end</sup>
+            <time>
+                {{ time_end.strftime("%d-%m-%Y %H:%M") }}
+            </time>
+        </li>
+        <li class="list-group-item">
+            <sup class="float-start">reserve period:</sup>
+            {{ reserve_period }}
+        </li>
+    </ul>
+    </div>
+
+
+    <h6 class="lead">obj</h6>
+    <div class="d-flex">
+    {% for i in obj_item %}
+
+        <div class="col-xxl-6 col-sm-10 card p-3 me-2 my-3">
+
+        <ul class="card-header list-group list-group-horizontal">
+            <li class="list-group-item">
+                <sup class="float-start">id:</sup>
+                <span>{{ i.id }}</span>
+            </li>
+            <li class="list-group-item">
+                <sup class="float-start">owner item:</sup>
+                <span>{{ i.owner_item_id }}</span>
+            </li>
+        </ul>
+
+        <ul class="card-body list-group list-group-flush">
+            <li class="list-group-item">
+                <sup class="float-start">title:</sup>
+                <p>{{ i.title }}</p>
+            </li>
+            <li class="list-group-item">
+                <p>{{ i.description | striptags() | truncate(190, True, '...', 5) | safe }}</p>
+            </li>
+        </ul>
+
+        <ul class="card-body list-group list-group-flush">
+            <li class="list-group-item">
+                <sup>created</sup>
+                <time>{{ i.created_at.strftime("%d-%m-%Y %H:%M") }}</time>
+            </li>
+        </ul>
+
+        <div class="card-footer">
+            <a class="page-link" href="/item-detail/{{ i.id }}">
+                details
+            </a>
+        </div>
+
+        <div class="card-footer row mt-3">
+            <a href="/reserve-details/{{ i.id }}" class="btn btn-outline-primary btn-sm">
+                reserve details
+            </a>
+        </div>
+
+        </div>
+
+        {% else %}
+        <span class="mt-5">there are no items with periods</span>
+    {% endfor %}
+    </div>
+
+
+    <div class="d-flex">
+    {% for i in not_item %}
+    
+        <div class="col-xxl-6 col-sm-10 card p-3 me-2 my-3">
+
+        <ul class="card-header list-group list-group-horizontal">
+            <li class="list-group-item">
+                <span class="badge bg-success">not reserve</span>
+            </li>
+            <li class="list-group-item">
+                <sup class="float-start">id:</sup>
+                {{ i.id }}
+            </li>
+            <li class="list-group-item">
+                <sup class="float-start">owner item:</sup>
+                {{ i.owner_item_id }}
+            </li>
+        </ul>
+
+        <ul class="card-body list-group list-group-flush">
+            <li class="list-group-item">
+                <sup class="float-start">title:</sup>
+                {{ i.title }}
+            </li>
+            <li class="list-group-item">
+                {{ i.description | striptags() | truncate(190, True, '...', 5) | safe }}
+            </li>
+        </ul>
+
+        <ul class="card-body list-group list-group-flush">
+            <li class="list-group-item">
+                <sup>created</sup>
+                <time>{{ i.created_at.strftime("%d-%m-%Y %H:%M") }}</time>
+            </li>
+        </ul>
+
+        <div class="card-footer">
+            <a class="page-link" href="/item-detail/{{ i.id }}">
+                details
+            </a>
+        </div>
+
+        </div>
+
+        {% else %}
+        <span class="mt-5">no we go without periods</span>
+    {% endfor %}
+
+    </div>
+
+    </div>
+
+{% endblock %}

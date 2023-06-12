@@ -1,4 +1,6 @@
 
+from datetime import datetime
+
 from fastapi import BackgroundTasks, HTTPException, status, Request, Response
 
 from pydantic import EmailStr
@@ -7,7 +9,7 @@ from sqlalchemy.orm import Session
 from config.settings import settings
 from config.mail import send_mail
 from models import models
-from user.schemas import UserCreate
+from user.schemas import UserCreate, UserRegister
 from .auth import auth
 from . import schemas
 
@@ -26,18 +28,20 @@ def generate_verification_email_link(request: Request, email):
     email_token = auth.encode_verification_token(email)
     base_url = request.base_url
     verification_link = f"{base_url}verify-email?token={email_token}"
+
     return verification_link
 
 
-async def send_verification_email(
+def send_verification_email(
+    request: Request,
     background_tasks: BackgroundTasks,
     email: EmailStr,
-    request: Request
 ):
 
     verification_link = generate_verification_email_link(
         request, email=email
     )
+
     email = schemas.EmailSchema(
         email=[email],
         body={
@@ -45,6 +49,7 @@ async def send_verification_email(
             "company_name": settings.PROJECT_TITLE,
         },
     )
+
     send_mail(
         background_tasks=background_tasks,
         subject=f"{settings.PROJECT_TITLE} email confirmation",
@@ -57,10 +62,11 @@ async def send_verification_email(
 
 
 async def create_user(
-    user: UserCreate,
-    db: Session,
-    background_tasks: BackgroundTasks,
     request: Request,
+    background_tasks: BackgroundTasks,
+    user: UserCreate,
+    password: str,
+    db: Session,
 ):
 
     old_user = await get_user_by_email(email=user.email, db=db)
@@ -69,28 +75,62 @@ async def create_user(
             status.HTTP_400_BAD_REQUEST, "User with this email already exists"
         )
 
+    send_verification_email(
+        request=request,
+        background_tasks=background_tasks,
+        email=user.email,
+    )
+
     new = models.User(
-        **user.dict(), password = auth.hash_password(user.password)
+        **user.dict(), password=password
     )
     db.add(new)
     db.commit()
     db.refresh(new)
 
-    await send_verification_email(
-        background_tasks,
-        email=user.email,
-        request=request
+    return new
+
+
+def api_create_user(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    obj_in: UserCreate,
+    password: str,
+    created_at: datetime,
+    db: Session,
+):
+    print("useremail", obj_in.email)
+    user = db.query(models.User).filter(
+        models.User.email == obj_in.email
+    ).first()
+
+    if user:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "User with this email already exists"
+        )
+
+    new = models.User(
+        **obj_in.dict(), password=password, created_at=created_at
+    )
+    db.add(new)
+    db.commit()
+    db.refresh(new)
+
+    send_verification_email(
+        request=request,
+        background_tasks=background_tasks,
+        email=obj_in.email,
     )
 
     return new
 
 
 async def login_user(
-    user_details: schemas.LoginDetails,
-    db: Session,
-    bg_tasks: BackgroundTasks,
     request: Request,
     response: Response,
+    background_tasks: BackgroundTasks,
+    user_details: schemas.LoginDetails,
+    db: Session,
 ):
 
     user = await get_user_by_email(email=user_details.email, db=db)
@@ -107,7 +147,8 @@ async def login_user(
         )
 
     if not user.email_verified:
-        await send_verification_email(bg_tasks, user_details.email, request)
+        send_verification_email(request, background_tasks, user_details.email)
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Электронная почта не подтверждена. Проверьте свою почту, чтобы узнать, как пройти верификацию.",
@@ -149,9 +190,9 @@ async def account_verify_email(
 
 
 async def resend_verification_email(
-    email: str,
-    bg_tasks: BackgroundTasks,
     request: Request,
+    background_tasks: BackgroundTasks,
+    email: str,
     db: Session,
 ):
     user = await get_user_by_email(email, db)
@@ -163,16 +204,16 @@ async def resend_verification_email(
     if user.email_verified:
         raise HTTPException(400, "Электронная почта уже проверена!")
 
-    await send_verification_email(bg_tasks, email, request)
+    send_verification_email(request, background_tasks, email)
 
     return {"msg": "Письмо с подтверждением отправлено повторно!"}
 
 
 
 async def reset_password(
-    email: str,
-    bg_tasks: BackgroundTasks,
     request: Request,
+    background_tasks: BackgroundTasks,
+    email: str,
 ):
 
     token = auth.encode_reset_token(email)
@@ -186,7 +227,7 @@ async def reset_password(
     )
 
     send_mail(
-        background_tasks=bg_tasks,
+        background_tasks=background_tasks,
         subject=f"{settings.PROJECT_TITLE} Password Reset",
         email=email,
         template_name="reset_password.html",

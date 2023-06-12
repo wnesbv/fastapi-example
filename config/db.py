@@ -1,9 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import bcrypt
 
 from sqlalchemy.orm import Session
-
+from models.reserverent import ReserveRentFor
 from models.models import User, Item, Comment, Like, Dislike
 from config.storage_config import Base, engine
 
@@ -70,6 +70,20 @@ def on_app_startup():
                     dislike_user_id=2,
                     dislike_item_id=2,
                     created_at=datetime.now()
+                ),
+                ReserveRentFor(
+                    time_start=datetime.now(),
+                    time_end=datetime.now() + timedelta(days=1),
+                    reserve_time=datetime.now(),
+                    rrf_us_id=1,
+                    rrf_tm_id=1,
+                ),
+                ReserveRentFor(
+                    time_start=datetime.now(),
+                    time_end=datetime.now() + timedelta(days=2),
+                    reserve_time=datetime.now() + timedelta(days=2),
+                    rrf_us_id=2,
+                    rrf_tm_id=2,
                 ),
             ]
         )

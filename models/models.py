@@ -26,6 +26,8 @@ class User(Base):
     user_like: Mapped[list["Like"]] = relationship(back_populates="like_user")
     user_dislike: Mapped[list["Dislike"]] = relationship(back_populates="dislike_user")
 
+    us_rrf: Mapped[list["ReserveRentFor"]] = relationship(back_populates="rrf_us")
+
     def __str__(self):
         return str(self.name)
 
@@ -48,6 +50,8 @@ class Item(Base):
     item_cmt: Mapped["Comment"] = relationship(back_populates="cmt_item")
     item_like: Mapped["Like"] = relationship(back_populates="like_item")
     item_dislike: Mapped["Dislike"] = relationship(back_populates="dislike_item")
+
+    tm_rrf: Mapped["ReserveRentFor"] = relationship(back_populates="rrf_tm")
 
     def __str__(self):
         return self.id

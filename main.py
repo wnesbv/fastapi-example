@@ -11,10 +11,11 @@ from config import settings
 from account import route_auth
 from comment import route_comment
 from item import route_item
+from reserve import route_reserve
 from trivia import route_trivia
 from user import route_user
 from vote import route_vote
-from api import auth, user, item as tm_item, comment as tm_comment
+from api import auth, user, item as tm_item, comment as tm_comment, reserve as tm_reserve
 from dump_csv import router_csv
 
 
@@ -28,6 +29,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(route_auth.router)
 app.include_router(route_comment.router)
 app.include_router(route_item.router)
+app.include_router(route_reserve.router)
 app.include_router(route_trivia.router)
 app.include_router(route_user.router)
 app.include_router(route_vote.router)
@@ -36,6 +38,7 @@ app.include_router(auth.router)
 app.include_router(user.router)
 app.include_router(tm_item.router)
 app.include_router(tm_comment.router)
+app.include_router(tm_reserve.router)
 
 
 if __name__ == "__main__":

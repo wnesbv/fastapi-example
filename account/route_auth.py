@@ -40,20 +40,21 @@ def get_register(request: Request):
 async def register(
     request: Request,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
     email: EmailStr = Form(...),
     password: str = Form(...),
     created_at: datetime = datetime.now(),
+    db: Session = Depends(get_db),
 ):
 
     user = user_schemas.UserCreate(
-        email=email, password=password, created_at=created_at
+        email=email, created_at=created_at
     )
 
     obj = await views.create_user(
-        user=user,
-        background_tasks=background_tasks,
         request=request,
+        background_tasks=background_tasks,
+        user=user,
+        password=auth.hash_password(password),
         db=db,
     )
     return responses.RedirectResponse(
@@ -74,23 +75,24 @@ def get_login(request: Request):
 
 @router.post("/login")
 async def login(
-    bg_tasks: BackgroundTasks,
     request: Request,
+    bg_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     email: str = Form(...),
     password: str = Form(...),
 ):
 
-    user = schemas.LoginDetails(
+    user_details = schemas.LoginDetails(
         email=email, password=password
     )
     response = responses.RedirectResponse(
         "/", status_code=status.HTTP_302_FOUND
     )
     response.token = await views.login_user(
-        user, db, bg_tasks, request, response=response
+        request, response, bg_tasks, user_details, db
     )
     return response
+
 
 
 @router.get("/verify-email")

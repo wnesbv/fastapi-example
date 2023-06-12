@@ -8,12 +8,11 @@ class UserBase(BaseModel):
     email: EmailStr
 
 
-class UserRegister(BaseModel):
-    email: EmailStr
+class UserRegister(UserBase):
+    pass
 
 
 class UserCreate(UserBase):
-    password: str
     created_at: datetime
 
 

@@ -1,0 +1,80 @@
+
+{% extends "base.html" %}
+{% block title %} reserve details {{ i.id }}  {% endblock %}
+
+{% block content %}
+
+    <h1 class="container lead my-2">reserve item...</h1>
+
+    <div class="container card">
+    <ul class="card-header list-group list-group-horizontal">
+
+        <li class="list-group-item">
+            <sup class="float-start">start</sup>
+            <time>
+                {{ time_start.strftime("%d-%m-%Y %H:%M") }}
+            </time>
+        </li>
+        <li class="list-group-item">
+            <sup class="float-start">end</sup>
+            <time>
+                {{ time_end.strftime("%d-%m-%Y %H:%M") }}
+            </time>
+        </li>
+        <li class="list-group-item">
+            <sup class="float-start">reserve period:</sup>
+            {{ reserve_period }}
+        </li>
+    </ul>
+    </div>
+
+
+    <div class="container card my-4">
+
+    <ul class="card-header list-group list-group-horizontal">
+        <li class="list-group-item">
+            <sup class="float-start">id:</sup>
+            <span>{{ i.id }}</span>
+        </li>
+        <li class="list-group-item">
+            <sup class="float-start">owner item:</sup>
+            <span>{{ i.owner_item_id }}</span>
+        </li>
+    </ul>
+
+    <ul class="card-body list-group list-group-flush">
+        <li class="list-group-item">
+            <sup class="float-start">title:</sup>
+            <p>{{ i.title }}</p>
+        </li>
+        <li class="list-group-item">
+            <p>{{ i.description | striptags() | truncate(190, True, '...', 5) | safe }}</p>
+        </li>
+    </ul>
+
+    <ul class="card-body list-group list-group-flush">
+        <li class="list-group-item">
+            <sup>created</sup>
+            <time>{{ i.created_at }}</time>
+        </li>
+    </ul>
+
+    <div class="card-footer my-4">
+        <a class="page-link" href="/item/details/{{ i.id }}">
+            details
+        </a>
+    </div>
+
+    <form class="card-footer" method="POST">
+    <sup class="float-start">description</sup>
+    <input type="text" name="description" class="form-control my-4">
+    <div class="card-footer">
+    <button type="submit" class="btn btn-outline-primary btn-sm">
+        submit
+    </button>
+    </div>
+    </form>
+
+    </div>
+
+{% endblock %}

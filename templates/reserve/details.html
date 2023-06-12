@@ -1,0 +1,49 @@
+
+{% extends "base.html" %}
+{% block title %} reserve {{ obj.id }} {% endblock %}
+
+{% block content %}
+
+    <h1 class="container lead my-4">detail reserve</h1>
+
+    <div class="container card p-3 me-2 mb-3">
+
+        <ul class="card-header list-group list-group-horizontal">
+            <li class="list-group-item">
+                <sup class="float-start">reserve id:</sup>
+                <span class="me-3">{{ obj.id }}</span>
+            <li class="list-group-item">
+                <sup class="float-start">owner reserve:</sup>
+                <span>{{ obj.rrf_us_id }}</span>
+            </li>
+            <li class="list-group-item">
+                <sup class="float-start">reserve item:</sup>
+                {{ obj.rrf_tm_id }}
+            </li>
+        </ul>
+
+        <ul class="card-header list-group list-group-horizontal">
+            <li class="list-group-item">
+                <sup class="float-start">start:</sup>
+                <time>{{ obj.time_start }}</time>
+            </li>
+            <li class="list-group-item">
+                <sup class="float-start">end:</sup>
+                <time>{{ obj.time_end }}</time>
+            </li>
+        </ul>
+
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+                <sup class="float-start">description:</sup>
+                <p>{{ obj.description }}</p>
+            </li>
+            <li class="list-group-item">
+                <sup class="float-start">reserve period:</sup>
+                <p>{{ obj.reserve_period }}</p>
+            </li>
+        </ul>
+
+    </div>
+
+{% endblock %}

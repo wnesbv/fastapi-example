@@ -1,0 +1,62 @@
+
+{% extends "base.html" %}
+{% block title %} list rent reserve {% endblock %}
+
+{% block content %}
+
+<h1 class="container lead my-4">list reserve..</h1>
+
+<div class="container d-flex">
+    {% if obj_list %}
+    {% for i in obj_list %}
+    <div class="col-xxl-6 col-sm-10">
+        <div class="card p-3 me-2 mb-3">
+
+        <ul class="card-header list-group list-group-horizontal">
+            <li class="list-group-item">
+                <sup class="float-start">id:</sup>
+                <span class="me-3">{{ i.id }}</span>
+            </li>
+            <li class="list-group-item">
+                <sup class="float-start">owner reserve:</sup>
+                <span>{{ i.rrf_us_id }}</span>
+            </li>
+            <li class="list-group-item">
+                <sup class="float-start">reserve item:</sup>
+                <span>{{ i.rrf_tm_id }}</span>
+            </li>
+        </ul>
+
+        <ul class="card-header list-group list-group-flush">
+            <li class="list-group-item">
+                <sup class="float-start">start:</sup>
+                <time>{{ i.time_start.strftime("%d-%m-%YT %H:%M") }}</time>
+                <sup class="">end:</sup>
+                <time>{{ i.time_end.strftime("%d-%m-%Y %H:%M") }}</time>
+            </li>
+            <li class="list-group-item">
+                <sup class="float-start">reserve_period:</sup>
+                <time>{{ i.reserve_period }}</time>
+            </li>
+        </ul>
+
+        <ul class="card-body list-group list-group-flush">
+            <li class="list-group-item">
+                <sup class="float-start">description:</sup>
+                <p>{{ i.description | striptags() | truncate(190, True, '...', 5) | safe }}</p>
+            </li>
+        </ul>
+
+        <div class="card-footer">
+            <a class="page-link" href="/details-reserve/{{ i.id }}">
+                detail
+            </a>
+        </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+</div>
+
+{% endblock %}

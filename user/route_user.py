@@ -1,4 +1,5 @@
 
+from datetime import datetime
 from fastapi import (
     APIRouter,
     Depends,
@@ -63,10 +64,11 @@ async def to_update(
     ),
     name: str = Form(...),
     password: str = Form(...),
+    modified_at: datetime = datetime.now(),
 ):
 
     user_details = schemas.UserUpdate(
-        name=name, password=password
+        name=name, password=password, modified_at=modified_at,
     )
     await views.update_user(
         id=id,
@@ -83,6 +85,7 @@ async def to_update(
 
 
 # ...list detail ...
+
 
 @router.get("/user-list/")
 def user_list(

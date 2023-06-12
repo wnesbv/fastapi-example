@@ -156,8 +156,8 @@ def list_item(db: Session):
 
 
 def list_user_item(
-    db: Session,
     owner_item_id: int,
+    db: Session,
 ):
 
     stmt = db.execute(

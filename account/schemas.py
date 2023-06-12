@@ -1,5 +1,5 @@
 
-from typing import List, Any, Dict
+from typing import Any
 from pydantic import BaseModel, EmailStr
 
 
@@ -14,8 +14,8 @@ class LoginDetails(BaseModel):
 
 
 class EmailSchema(BaseModel):
-    email: List[EmailStr]
-    body: Dict[str, Any]
+    email: list[EmailStr]
+    body: dict[str, Any]
 
 
 class ResetPasswordDetails(BaseModel):

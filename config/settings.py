@@ -31,4 +31,13 @@ class Settings(BaseModel):
     RESET_TOKEN_EXPIRY_MINUTES: int = 30
 
 
+    TIME_FORMAT: int = "%H:%M:%S"
+    DATETIME_FORMAT: int = "%Y-%m-%d %H:%M:%S"
+    DATE_TIME: int = "%Y-%m-%d:%H:%M"
+    DATE_T: int = "%Y-%m-%dT%H:%M"
+    DATE: int = "%Y-%m-%d"
+    DATE_POINT: int = "%d.%m.%Y"
+    DATE_L: int = "%Y-%m-%dT%H-%M"
+
+
 settings = Settings()

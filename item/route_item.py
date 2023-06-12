@@ -201,7 +201,8 @@ def list_item_delete(
     current_user: Annotated[EmailStr, Depends(get_active_user)],
     db: Session = Depends(get_db),
 ):
-    obj_list = views.list_user_item(db, owner_item_id=current_user.id)
+    owner_item_id=current_user.id
+    obj_list = views.list_user_item(owner_item_id, db)
 
     return templates.TemplateResponse(
         "item/list_delete.html", {"request": request, "obj_list": obj_list}
