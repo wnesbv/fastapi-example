@@ -16,9 +16,30 @@ from models import models
 from item import schemas
 
 
+async def create_not_img_item(
+    owner_item_id: int,
+    created_at: datetime,
+    obj_in: schemas.ItemBase,
+    db: Session,
+):
+
+    new = models.Item(
+        **obj_in.dict(),
+        owner_item_id=owner_item_id,
+        created_at=created_at,
+    )
+
+    db.add(new)
+    db.commit()
+    db.refresh(new)
+
+    return new
+
+
 async def create_new_item(
     image_url: UploadFile,
     owner_item_id: int,
+    created_at: datetime,
     obj_in: schemas.ItemCreate,
     db: Session,
 ):
@@ -27,6 +48,7 @@ async def create_new_item(
         **obj_in.dict(),
         image_url=image_url,
         owner_item_id=owner_item_id,
+        created_at=created_at,
     )
 
     db.add(new)
@@ -35,15 +57,21 @@ async def create_new_item(
 
     return new
 
-async def create_not_img_item(
+
+# ...API create
+
+
+async def api_not_img_item(
     owner_item_id: int,
-    obj_in: schemas.ItemCreate,
+    created_at: datetime,
+    obj_in: schemas.ItemBase,
         db: Session,
 ):
 
     new = models.Item(
         **obj_in.dict(),
         owner_item_id=owner_item_id,
+        created_at=created_at,
     )
 
     db.add(new)
@@ -53,7 +81,31 @@ async def create_not_img_item(
     return new
 
 
-# ...update
+async def api_new_item(
+    image_url: UploadFile,
+    owner_item_id: int,
+    created_at: datetime,
+    obj_in: schemas.ItemCreate,
+    db: Session,
+):
+
+    img = obj_in.dict()
+    del img["image_url"]
+    new = models.Item(
+        **img,
+        image_url=image_url,
+        owner_item_id=owner_item_id,
+        created_at=created_at
+    )
+
+    db.add(new)
+    db.commit()
+    db.refresh(new)
+
+    return new
+
+
+# ...img_del
 
 
 async def img_del(
@@ -77,11 +129,34 @@ async def img_del(
     return existing_item
 
 
+# ...update
+
+
+async def update_item(
+    id: int,
+    modified_at: datetime,
+    obj_in: schemas.ItemBase,
+    db: Session,
+):
+
+    existing_item = db.query(
+        models.Item
+    ).filter(models.Item.id == id)
+
+    obj_in.__dict__.update(
+        modified_at=modified_at,
+    )
+    existing_item.update(obj_in.__dict__)
+    db.commit()
+
+    return existing_item
+
+
 async def img_update_item(
     id: int,
     image_url: str,
     modified_at: datetime,
-    obj_in: schemas.ItemImgUpdate,
+    obj_in: schemas.ItemCreate,
     db: Session,
 ):
     existing_item = db.query(
@@ -98,17 +173,74 @@ async def img_update_item(
     return existing_item
 
 
-async def update_item(
+# ...api update
+
+
+async def api_str_item(
     id: int,
+    title: str,
+    description: str,
     modified_at: datetime,
-    db: Session,
     obj_in: schemas.ItemUpdate,
+    db: Session,
 ):
     existing_item = db.query(
         models.Item
     ).filter(models.Item.id == id)
 
     obj_in.__dict__.update(
+        title=title,
+        description=description,
+        modified_at=modified_at,
+    )
+    existing_item.update(obj_in.__dict__)
+    db.commit()
+
+    return existing_item
+
+
+async def api_update_item(
+    id: int,
+    title: str,
+    description: str,
+    image_url: str,
+    modified_at: datetime,
+    obj_in: schemas.ItemUpdate,
+    db: Session,
+):
+    existing_item = db.query(
+        models.Item
+    ).filter(models.Item.id == id)
+
+    obj_in.__dict__.update(
+        title=title,
+        description=description,
+        image_url=image_url,
+        modified_at=modified_at,
+    )
+    existing_item.update(obj_in.__dict__)
+    db.commit()
+
+    return existing_item
+
+
+async def api_img_item(
+    id: int,
+    title: str,
+    description: str,
+    image_url: str,
+    modified_at: datetime,
+    obj_in: schemas.ItemCreate,
+    db: Session,
+):
+    existing_item = db.query(
+        models.Item
+    ).filter(models.Item.id == id)
+
+    obj_in.__dict__.update(
+        title=title,
+        description=description,
+        image_url=image_url,
         modified_at=modified_at,
     )
     existing_item.update(obj_in.__dict__)

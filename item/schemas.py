@@ -1,4 +1,3 @@
-
 from datetime import datetime
 
 from pydantic import BaseModel
@@ -16,23 +15,29 @@ class ImgDel(BaseModel):
 
 
 class ItemCreate(ItemBase):
-    created_at: datetime
+    image_url: UploadFile
 
 
-class ItemUpdate(BaseModel):
-    title: str
-    description: str
-    modified_at: datetime
-
-
-class ItemImgUpdate(ItemBase):
-    modified_at: datetime
+class ItemUpdate(ItemBase):
+    image_url: str
 
 
 class ListItem(ItemBase):
     id: int
-    image_url: UploadFile | None = None
+    image_url: str | None = None
     owner_item_id: int
+    created_at: datetime
+    modified_at: datetime | None = None
+
+    class Config:
+        orm_mode = True
+
+
+class ApiListItem(ItemBase):
+    id: int
+    title: str
+    description: str
+    image_url: str | None = None
 
     class Config:
         orm_mode = True

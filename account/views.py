@@ -94,9 +94,9 @@ async def create_user(
 def api_create_user(
     request: Request,
     background_tasks: BackgroundTasks,
-    obj_in: UserCreate,
     password: str,
     created_at: datetime,
+    obj_in: UserCreate,
     db: Session,
 ):
     print("useremail", obj_in.email)

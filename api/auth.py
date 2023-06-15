@@ -43,9 +43,9 @@ def register_user(
     views.api_create_user(
         request=request,
         background_tasks=background_tasks,
-        obj_in=user,
         password=auth.hash_password(password),
         created_at=datetime.now(),
+        obj_in=user,
         db=db,
     )
     return user

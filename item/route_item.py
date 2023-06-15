@@ -54,6 +54,7 @@ async def create_item(
     created_at: datetime = datetime.now(),
     db: Session = Depends(get_db),
 ):
+
     exists = db.query(
         models.Item
     ).filter(models.Item.title == title).first()
@@ -68,25 +69,27 @@ async def create_item(
         #     detail="name already registered..!"
         # )
 
-    i = schemas.ItemCreate(
-        title=title, description=description, created_at=created_at
-    )
-    img = schemas.ItemCreate(
-        title=title, description=description, image_url=image_url, created_at=created_at
-    )
-
     if image_url.filename == "" or category == "":
+
+        i = schemas.ItemBase(
+            title=title, description=description
+        )
         obj = await views.create_not_img_item(
-            owner_item_id=current_user.id, obj_in=i, db=db,
+            owner_item_id=current_user.id, created_at=created_at, obj_in=i, db=db,
         )
         return responses.RedirectResponse(
             f"/item-detail/{ obj.id }/?msg=sucesso..!",
             status_code=status.HTTP_302_FOUND
         )
 
+    img = schemas.ItemCreate(
+        title=title, description=description, image_url=image_url
+    )
+
     upload = await views.img_creat(category, image_url)
+
     obj_img = await views.create_new_item(
-        image_url=upload, owner_item_id=current_user.id, obj_in=img, db=db,
+        image_url=upload, owner_item_id=current_user.id, created_at=created_at, obj_in=img, db=db,
     )
 
     return responses.RedirectResponse(
@@ -140,23 +143,13 @@ async def update(
     obj = await views.retreive_item(id=id, db=db)
     print(f"image_url.. {obj.image_url}")
 
-    img_del = schemas.ImgDel(
-        image_url=image_url,
-        modified_at=modified_at,
-    )
-    img = schemas.ItemImgUpdate(
-        title=title,
-        description=description,
-        image_url=image_url,
-        modified_at=modified_at,
-    )
-    i = schemas.ItemUpdate(
-        title=title,
-        description=description,
-        modified_at=modified_at,
-    )
-
     if image_url.filename == "" or category == "":
+
+        i = schemas.ItemBase(
+            title=title,
+            description=description,
+            modified_at=modified_at,
+        )
         await views.update_item(
             id=id, modified_at=modified_at, obj_in=i,  db=db,
         )
@@ -168,6 +161,10 @@ async def update(
             if Path(f".{obj.image_url}").exists():
                 Path.unlink(f".{obj.image_url}")
 
+            img_del = schemas.ImgDel(
+                image_url=image_url,
+                modified_at=modified_at,
+            )
             await views.img_del(
                 id=id, image_url="", modified_at=modified_at, obj_in=img_del, db=db,
             )
@@ -181,8 +178,14 @@ async def update(
             status_code=status.HTTP_302_FOUND,
         )
 
-
+    img = schemas.ItemCreate(
+        title=title,
+        description=description,
+        image_url=image_url,
+        modified_at=modified_at,
+    )
     upload = await views.img_creat(category, image_url)
+
     await views.img_update_item(
         id=id, image_url=upload, modified_at=modified_at, obj_in=img,  db=db
     )

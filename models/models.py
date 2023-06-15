@@ -37,7 +37,7 @@ class Item(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     title = Column(String, unique=True, index=True)
-    description = Column(Text, nullable=True)
+    description = Column(Text)
     image_url = Column(String, nullable=True)
     created_at = Column(DateTime, nullable=True)
     modified_at = Column(DateTime, nullable=True)
