@@ -192,51 +192,6 @@ async def update(
     return obj_str
 
 
-
-
-
-
-    #     i = schemas.ItemBase(
-    #         title=title,
-    #         description=description,
-    #     )
-    #     await views.api_update_item(
-    #         id=id,
-    #         modified_at=datetime.now(),
-    #         obj_in=i,
-    #         db=db,
-    #     )
-    #     if delete_bool is True:
-    #         if Path(f".{obj.image_url}").exists():
-    #             Path.unlink(f".{obj.image_url}")
-
-    #         img_del = schemas.ImgDel(
-    #             image_url=image_url,
-    #             modified_at=datetime.now(),
-    #         )
-    #         await views.img_del(
-    #             id=id,
-    #             image_url="",
-    #             modified_at=datetime.now(),
-    #             obj_in=img_del,
-    #             db=db,
-    #         )
-    #         return img_del
-    #     return i
-
-    # img = schemas.ItemCreate(
-    #     title=title,
-    #     description=description,
-    #     image_url=image_url,
-    # )
-    # upload = await views.img_creat(category, image_url)
-
-    # await views.api_update_img_item(
-    #     id=id, image_url=upload, modified_at=datetime.now(), obj_in=img, db=db
-    # )
-    # return img
-
-
 # ...list
 
 
