@@ -34,7 +34,10 @@ router = APIRouter(include_in_schema=False)
 
 
 @router.get("/create-item")
-def get_create_item(request: Request):
+def get_create_item(
+    request: Request,
+    current_user: Annotated[EmailStr, Depends(get_active_user)],
+):
     msg = ""
     if "msg" in request.query_params:
         msg = request.query_params["msg"]
@@ -141,7 +144,6 @@ async def update(
 ):
 
     obj = await views.retreive_item(id=id, db=db)
-    print(f"image_url.. {obj.image_url}")
 
     if image_url.filename == "" or category == "":
 
@@ -153,8 +155,6 @@ async def update(
         await views.update_item(
             id=id, modified_at=modified_at, obj_in=i,  db=db,
         )
-        print(f"url..! .{obj.image_url}")
-
 
         if delete_bool is True:
 

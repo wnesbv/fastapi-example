@@ -1,6 +1,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy import Boolean, Column, String, Text, ForeignKey, DateTime
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -12,19 +14,18 @@ class ReserveRentFor(Base):
     __tablename__ = "reserverentfor_i"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    description = Column(Text, nullable=True)
-    time_start = Column(DateTime, nullable=True)
-    time_end = Column(DateTime, nullable=True)
-    reserve_time = Column(DateTime, nullable=True)
-    reserve_period = Column(String, nullable=True)
-    created_at = Column(DateTime, nullable=True)
-    modified_at = Column(DateTime, nullable=True)
+    description: Mapped[str] = mapped_column(Text, nullable=True)
+    time_start: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    time_end: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    reserve_time: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    modified_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     # ...
     rrf_us_id: Mapped[int] = mapped_column(
-        ForeignKey("user_u.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("user_us.id", ondelete="CASCADE"), nullable=False
     )
     rrf_tm_id: Mapped[int] = mapped_column(
-        ForeignKey("item_i.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("item_tm.id", ondelete="CASCADE"), nullable=False
     )
     # ...
     rrf_us: Mapped["User"] = relationship(back_populates="us_rrf")

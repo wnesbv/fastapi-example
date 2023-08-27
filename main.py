@@ -4,7 +4,7 @@ from fastapi import FastAPI
 
 from fastapi.staticfiles import StaticFiles
 
-from config import settings
+from config.settings import settings
 
 #from config.db import on_app_startup
 
@@ -43,4 +43,4 @@ app.include_router(tm_reserve.router)
 
 if __name__ == "__main__":
 
-    uvicorn.run(app, host="127.0.0.1", port=8000, debug=settings.DEBUG)
+    uvicorn.run(app, host="127.0.0.1", port=8000)

@@ -2,6 +2,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Annotated
 import os, csv
+import tempfile
 from pydantic import EmailStr
 
 from sqlalchemy import delete
@@ -98,8 +99,6 @@ async def ge_import_csv(
 ):
     return templates.TemplateResponse("import_csv.html", {"request": request})
 
-
-import tempfile
 
 
 @router.post("/import-csv")

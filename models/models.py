@@ -1,6 +1,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy import Boolean, Column, String, Text, ForeignKey, DateTime
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -9,48 +11,63 @@ from config.storage_config import Base
 
 
 class User(Base):
-    __tablename__ = "user_u"
+    __tablename__ = "user_us"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    name = Column(String, nullable=True)
-    email: Mapped[str] = Column(String, nullable=False, unique=True, index=True)
-    password = Column(String, nullable=False)
-    email_verified = Column(Boolean, default=False)
-    is_active = Column(Boolean, default=False)
-    is_admin = Column(Boolean, default=False)
-    created_at = Column(DateTime, nullable=True)
-    modified_at = Column(DateTime, nullable=True)
+    name: Mapped[str] = mapped_column(String(30), nullable=True)
+    email: Mapped[str] = mapped_column(String(120), nullable=False, unique=True, index=True)
+    password: Mapped[str] = mapped_column(String, nullable=False)
     # ...
-    user_item: Mapped[list["Item"]] = relationship(back_populates="item_user")
-    user_cmt: Mapped[list["Comment"]] = relationship(back_populates="cmt_user")
-    user_like: Mapped[list["Like"]] = relationship(back_populates="like_user")
-    user_dislike: Mapped[list["Dislike"]] = relationship(back_populates="dislike_user")
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
+    # ...
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    modified_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
-    us_rrf: Mapped[list["ReserveRentFor"]] = relationship(back_populates="rrf_us")
+    # ...
+    user_item: Mapped[list["Item"]] = relationship(
+        back_populates="item_user",
+        cascade="all, delete-orphan"
+    )
+    user_cmt: Mapped[list["Comment"]] = relationship(
+        back_populates="cmt_user",
+        cascade="all, delete-orphan"
+    )
+    user_like: Mapped[list["Like"]] = relationship(
+        back_populates="like_user",
+    )
+    user_dislike: Mapped[list["Dislike"]] = relationship(
+        back_populates="dislike_user"
+    )
+
+    us_rrf: Mapped[list["ReserveRentFor"]] = relationship(
+        back_populates="rrf_us"
+    )
 
     def __str__(self):
         return str(self.name)
 
 
 class Item(Base):
-    __tablename__ = "item_i"
+    __tablename__ = "item_tm"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    title = Column(String, unique=True, index=True)
-    description = Column(Text)
-    image_url = Column(String, nullable=True)
-    created_at = Column(DateTime, nullable=True)
-    modified_at = Column(DateTime, nullable=True)
+    title: Mapped[str] = mapped_column(String(30), unique=True, index=True)
+    description: Mapped[str] = mapped_column(Text, nullable=True)
+    image_url: Mapped[str] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    modified_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     # ...
     owner_item_id: Mapped[int] = mapped_column(
-        ForeignKey("user_u.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("user_us.id", ondelete="CASCADE"), nullable=False
     )
     # ...
     item_user: Mapped["User"] = relationship(back_populates="user_item")
-    item_cmt: Mapped["Comment"] = relationship(back_populates="cmt_item")
+    item_cmt: Mapped["Comment"] = relationship(back_populates="cmt_item", cascade="all, delete-orphan")
     item_like: Mapped["Like"] = relationship(back_populates="like_item")
     item_dislike: Mapped["Dislike"] = relationship(back_populates="dislike_item")
-
+    # ...
     tm_rrf: Mapped["ReserveRentFor"] = relationship(back_populates="rrf_tm")
 
     def __str__(self):
@@ -58,18 +75,18 @@ class Item(Base):
 
 
 class Comment(Base):
-    __tablename__ = "comment_c"
+    __tablename__ = "comment_cmt"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    opinion_expressed = Column(String, nullable=False)
-    created_at = Column(DateTime, nullable=True)
-    modified_at = Column(DateTime, nullable=True)
+    opinion_expressed: Mapped[str] = mapped_column(String(100), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    modified_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     # ...
     cmt_user_id: Mapped[int] = mapped_column(
-        ForeignKey("user_u.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("user_us.id", ondelete="CASCADE"), nullable=False
     )
     cmt_item_id: Mapped[int] = mapped_column(
-        ForeignKey("item_i.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("item_tm.id", ondelete="CASCADE"), nullable=False
     )
     # ...
     cmt_user: Mapped["User"] = relationship(back_populates="user_cmt")
@@ -83,16 +100,16 @@ class Comment(Base):
 
 
 class Like(Base):
-    __tablename__ = "like_l"
+    __tablename__ = "like_lk"
 
-    upvote = Column(Boolean, default=True)
-    created_at = Column(DateTime, nullable=False)
+    upvote: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     # ...
     like_user_id: Mapped[int] = mapped_column(
-        ForeignKey("user_u.id", ondelete="CASCADE"), primary_key=True
+        ForeignKey("user_us.id", ondelete="CASCADE"), primary_key=True
     )
     like_item_id: Mapped[int] = mapped_column(
-        ForeignKey("item_i.id", ondelete="CASCADE"), primary_key=True
+        ForeignKey("item_tm.id", ondelete="CASCADE"), primary_key=True
     )
     # ..
     like_user: Mapped["User"] = relationship(back_populates="user_like")
@@ -103,16 +120,16 @@ class Like(Base):
 
 
 class Dislike(Base):
-    __tablename__ = "dislike_d"
+    __tablename__ = "dislike_dlk"
 
-    downvote = Column(Boolean, default=False)
-    created_at = Column(DateTime, nullable=False)
+    downvote: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     # ...
     dislike_user_id: Mapped[int] = mapped_column(
-        ForeignKey("user_u.id", ondelete="CASCADE"), primary_key=True
+        ForeignKey("user_us.id", ondelete="CASCADE"), primary_key=True
     )
     dislike_item_id: Mapped[int] = mapped_column(
-        ForeignKey("item_i.id", ondelete="CASCADE"), primary_key=True
+        ForeignKey("item_tm.id", ondelete="CASCADE"), primary_key=True
     )
     # ...
     dislike_user: Mapped["User"] = relationship(back_populates="user_dislike")

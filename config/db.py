@@ -79,9 +79,9 @@ def on_app_startup():
                     rrf_tm_id=1,
                 ),
                 ReserveRentFor(
-                    time_start=datetime.now(),
-                    time_end=datetime.now() + timedelta(days=2),
-                    reserve_time=datetime.now() + timedelta(days=2),
+                    time_start=datetime.now() + timedelta(days=2),
+                    time_end=datetime.now() + timedelta(days=3),
+                    reserve_time=datetime.now() + timedelta(days=1),
                     rrf_us_id=2,
                     rrf_tm_id=2,
                 ),

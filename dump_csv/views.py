@@ -9,7 +9,6 @@ from fastapi import (
     responses,
     Form,
     File,
-    UploadFile,
     status,
 )
 

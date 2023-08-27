@@ -2,7 +2,6 @@
 from datetime import datetime
 
 from pydantic import BaseModel
-from fastapi import UploadFile
 
 
 class ReserveAdd(BaseModel):
@@ -16,7 +15,6 @@ class ReserveList(BaseModel):
     time_start: datetime
     time_end: datetime
     reserve_time: datetime | None = None
-    reserve_period: str
     created_at: datetime
     modified_at: datetime | None = None
     rrf_us_id: int
@@ -32,7 +30,6 @@ class Reserve(BaseModel):
     time_start: datetime
     time_end: datetime
     reserve_time: datetime
-    reserve_period: datetime
     created_at: datetime
     modified_at: datetime
     rrf_us_id: int

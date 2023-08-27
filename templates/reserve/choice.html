@@ -4,7 +4,7 @@
 
 {% block content %}
 
-    <h1 class="container lead my-4">choice item...</h1>
+    <h1 class="container lead my-2">choice item...</h1>
 
     <div class="container">
     <div class="card">
@@ -22,19 +22,15 @@
                 {{ time_end.strftime("%d-%m-%Y %H:%M") }}
             </time>
         </li>
-        <li class="list-group-item">
-            <sup class="float-start">reserve period:</sup>
-            {{ reserve_period }}
-        </li>
     </ul>
     </div>
 
 
     <h6 class="lead">obj</h6>
-    <div class="d-flex">
+    <div class="flex_start">
     {% for i in obj_item %}
 
-        <div class="col-xxl-6 col-sm-10 card p-3 me-2 my-3">
+        <div class="card mt-2 me-1">
 
         <ul class="card-header list-group list-group-horizontal">
             <li class="list-group-item">
@@ -70,7 +66,7 @@
             </a>
         </div>
 
-        <div class="card-footer row mt-3">
+        <div class="card-footer mt-3">
             <a href="/reserve-details/{{ i.id }}" class="btn btn-outline-primary btn-sm">
                 reserve details
             </a>

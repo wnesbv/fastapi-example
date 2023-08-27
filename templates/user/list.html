@@ -5,37 +5,35 @@
 {% block content %}
 
     <h1 class="container display-6 my-5">user list..</h1>
-    <div class="container mb-5">
-        <div class="row">
-            {% if obj_list %}
+    <div class="container flex_start mb-5">
 
-                {% for obj in obj_list %}
-                    <div class="col-xxl-3 col-xl-4 col-lg-6 col-md-8 col-sm-10 mr-auto">
-                        <div class="card shadow-sm p-3 mb-2 bg-body rounded">
+    {% if obj_list %}
+    {% for obj in obj_list %}
+    <div class="card mt-2 me-1">
+        <div class="card shadow-sm p-3 mb-2 bg-body rounded">
 
-                            <div class="card-header">
-                                <span>id<sup class="mx-1">|</sup>{{ obj.id }}</span>
-                            </div>
-                            <div class="card-body">
-                                <p class="card-text">name : {{ obj.name }}</p>
-                            </div>
-                            <div class="card-body">
-                                <p class="card-text">email : {{ obj.email }}</p>
-                            </div>
+            <div class="card-header">
+                <span>id<sup class="mx-1">|</sup>{{ obj.id }}</span>
+            </div>
+            <div class="card-body">
+                <p class="card-text">name : {{ obj.name }}</p>
+            </div>
+            <div class="card-body">
+                <p class="card-text">email : {{ obj.email }}</p>
+            </div>
 
-                            <div class="card-footer">
-                                <a class="btn btn-outline-primary btn-sm" href="/user-detail/{{ obj.id }}">read more</a>
-                            </div>
+            <div class="card-footer">
+                <a class="btn btn-outline-primary btn-sm" href="/user-detail/{{ obj.id }}">read more</a>
+            </div>
 
-                        </div>
-                    </div>
-                {% endfor %}
-
-                    {% else %}
-                    <h6>no information available</h6>
-
-            {% endif %}
         </div>
+    </div>
+    {% endfor %}
+
+        {% else %}
+        <h6>no information available</h6>
+
+    {% endif %}
 
     </div>
 

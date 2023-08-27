@@ -12,7 +12,6 @@ from fastapi import (
     responses,
     Form,
     File,
-    UploadFile,
     status,
 )
 
@@ -190,7 +189,6 @@ async def reserve_details(
         time_start=time_start,
         time_end=time_end,
         description=description,
-        reserve_period=reserve_period,
         rrf_us_id=current_user.id,
         rrf_tm_id=id,
         created_at=datetime.now(),

@@ -4,6 +4,7 @@ from decouple import config
 
 
 class Settings(BaseModel):
+    DEBUG: bool = config("DEBUG")
     PROJECT_TITLE: str = config("USE_SQLITE_DB")
 
     USE_SQLITE_DB: str = config("USE_SQLITE_DB")

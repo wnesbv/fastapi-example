@@ -5,7 +5,6 @@ from pathlib import Path, PurePosixPath
 
 from fastapi import (
     HTTPException,
-    UploadFile,
     status,
 )
 from sqlalchemy import func, and_
@@ -24,6 +23,12 @@ async def period_item(
     rsv = db.execute(select(models.Item.id).join(reserverent.ReserveRentFor.rrf_tm))
     rsv_list = rsv.scalars().all()
 
+    i = db.execute(select(reserverent.ReserveRentFor.time_start))
+    start = i.scalars().all()
+    print(" start..", start)
+    i = db.execute(select(reserverent.ReserveRentFor.time_end))
+    end = i.scalars().all()
+
     # ..
     stmt = db.execute(
         select(models.Item)
@@ -31,9 +36,8 @@ async def period_item(
             reserverent.ReserveRentFor.rrf_tm,
         )
         .where(models.Item.id.in_(rsv_list))
-        .where(func.datetime(reserverent.ReserveRentFor.time_end) < time_start)
-        .where(func.datetime(reserverent.ReserveRentFor.time_start) < time_start)
-        .where(func.datetime(reserverent.ReserveRentFor.time_end) < time_end)
+        .where(func.datetime(time_start).not_in(start))
+        .where(func.datetime(time_end).not_in(end))
     )
     result = stmt.scalars().unique().all()
     # ..
