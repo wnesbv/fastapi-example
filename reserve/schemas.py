@@ -21,7 +21,7 @@ class ReserveList(BaseModel):
     rrf_tm_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class Reserve(BaseModel):
@@ -38,7 +38,7 @@ class Reserve(BaseModel):
     rrf_tm: list["Item"] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 from user.schemas import IUser

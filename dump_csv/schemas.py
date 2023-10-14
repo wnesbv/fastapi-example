@@ -1,10 +1,10 @@
 
+from __future__ import annotations
+
 from datetime import datetime
 
 from pydantic import BaseModel
 from fastapi import UploadFile
-
-
 
 
 class ImportCSV(BaseModel):
@@ -21,13 +21,13 @@ class ExportCSV(ImportCSV):
 
 
 class BaseCSV(ExportCSV):
-    item_user: list["User"] = []
-    item_cmt: list["Comment"] = []
-    item_like: list["Like"] = []
-    item_dislike: list["Dislike"] = []
+    item_user: list[int]
+    item_cmt: list[int]
+    item_like: list[int]
+    item_dislike: list[int]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 from user.schemas import User

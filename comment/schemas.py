@@ -1,4 +1,6 @@
 
+from __future__ import annotations
+
 from datetime import datetime
 
 from pydantic import BaseModel
@@ -22,18 +24,18 @@ class CmtUser(CommentBase):
     cmt_item_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class Comment(CommentBase):
     id: int
     cmt_user_id: int
     cmt_item_id: int
-    cmt_user: list["UiUser"] = []
-    cmt_item: list["UiItem"] = []
+    cmt_user: list[int]
+    cmt_item: list[int]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 from user.schemas import UiUser

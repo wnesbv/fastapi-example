@@ -3,13 +3,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from pydantic import EmailStr
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from models import models
 from comment import schemas
 
-from config.dependency import get_db
+from config.dependency import get_session
 from user.views import get_active_user
 
 
@@ -17,49 +17,29 @@ router = APIRouter(prefix="/docs", tags=["Сomment"])
 
 
 @router.get("/comment/{id}", response_model=schemas.Comment)
-def user_relationship(
+async def user_relationship(
     id: int,
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
 
-    obj_us = (
-        db.execute(
-            select(
-                models.User.id,
-                models.User.email,
-                models.User.email_verified,
-                models.User.is_active,
-                models.User.is_admin,
-            )
-            .join(models.Comment.cmt_user)
-            .where(models.Comment.id == id)
-        )
-        .unique()
-        .all()
+    stmt = await session.execute(
+        select(models.User)
+        .join(models.Comment.cmt_user)
+        .where(models.Comment.id == id)
     )
+    obj_us = stmt.scalars().unique()
     print("obj_us..", obj_us)
-
-    obj_tm = (
-        db.execute(
-            select(
-                models.Item.id,
-                models.Item.title,
-                models.Item.description,
-                models.Item.owner_item_id,
-            )
-            .join(models.Comment.cmt_item)
-            .where(models.Comment.id == id)
-        )
-        .unique()
-        .all()
+    stmt = await session.execute(
+        select(models.Item)
+        .join(models.Comment.cmt_item)
+        .where(models.Comment.id == id)
     )
+    obj_tm = stmt.scalars().unique()
     print("obj_tm..", obj_tm)
-
-
-    i = db.scalars(
+    stmt = await session.scalars(
         select(models.Comment).where(models.Comment.id == id)
-    ).first()
-
+    )
+    i = stmt.scalars().first()
     obj = schemas.Comment(
         id=i.id,
         opinion_expressed=i.opinion_expressed,
@@ -75,12 +55,12 @@ def user_relationship(
 
 
 @router.get("/user-comment", response_model=list[schemas.CmtUser])
-def get_user_item(
+async def get_user_item(
     current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
 
-    stmt = db.execute(
+    stmt = await session.execute(
         select(models.Comment)
         .where(models.Comment.cmt_user_id == current_user.id)
     )

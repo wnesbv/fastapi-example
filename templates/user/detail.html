@@ -4,7 +4,7 @@
 
 {% block content %}
 
-    <h1 class="container lead my-4">user detail</h1>
+    <h1 class="container lead my-3">user detail</h1>
     <div class="container">
         <div class="h-100 p-5 bg-light border rounded-3">
             <div class="shadow p-3 mb-5 bg-body rounded">
@@ -28,17 +28,20 @@
                         </span>
                         <span class="w-75">{{ obj.email }}</span>
                     </li>
-                    <li class="list-group-item">
-                        <span>
-                            <span>user in items: </span>
-                        </span>
-                        {% for obj in obj_item %}
-                        <span class="w-75"><sub>id</sub> {{ obj.id }} | </span>
-                        {% endfor %}
-                        <sub class="mx-2">count item total:</sub>
+                    <li class="list-group-item pt-3">
+                        <sup class="float-start">total user item</sup>
                         <span>{{ count_item }}</span>
-                        
                     </li>
+                    <li class="list-group-item pt-3">
+                        <sup class="float-start">all user items</sup>
+                    </li>
+                    {% for obj in obj_item %}
+                    <li class="list-group-item pt-3">
+                        <span>
+                            <sub>item id</sub> {{ obj.id }}
+                        </span>
+                    </li>
+                    {% endfor %}
                 </ul>
             </div>
         </div>

@@ -1,6 +1,9 @@
+
+from __future__ import annotations
+from typing import Optional
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, FilePath
 from fastapi import UploadFile
 
 
@@ -10,7 +13,6 @@ class ItemBase(BaseModel):
 
 
 class ImgDel(BaseModel):
-    image_url: UploadFile
     modified_at: datetime
 
 
@@ -19,7 +21,7 @@ class ItemCreate(ItemBase):
 
 
 class ItemUpdate(ItemBase):
-    image_url: str
+    image_url: FilePath
 
 
 class ListItem(ItemBase):
@@ -30,7 +32,7 @@ class ListItem(ItemBase):
     modified_at: datetime | None = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ApiListItem(ItemBase):
@@ -40,7 +42,7 @@ class ApiListItem(ItemBase):
     image_url: str | None = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # ...
@@ -50,7 +52,7 @@ class UiItem(ItemBase):
     owner_item_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # ...
@@ -58,13 +60,13 @@ class Item(ItemBase):
     id: int
     image_url: UploadFile | None = None
     owner_item_id: int
-    item_user: list["IUser"] = []
-    item_cmt: list["Comment"] = []
-    item_like: list["Like"] = []
-    item_dislike: list["Dislike"] = []
+    item_user: list[int]
+    item_cmt: list[int]
+    item_like: list[int]
+    item_dislike: list[int]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 from user.schemas import IUser

@@ -15,16 +15,14 @@ from fastapi import (
     status,
 )
 
-from pydantic import EmailStr
-
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import insert
-from sqlalchemy.orm import Session
-from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from user.views import get_active_user
-from config.dependency import get_db
+from user.views import access_user_id
+from config.dependency import get_session
 from config.settings import settings
+from options_select.opt import in_all, left_right_first, left_right_all
 
 from models import models, reserverent
 
@@ -108,7 +106,7 @@ async def get_token_reserve(
 @router.get("/reserve/choice")
 async def get_reserve_choice(
     request: Request,
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
     token = await get_token_reserve(request)
 
@@ -119,8 +117,8 @@ async def get_reserve_choice(
     time_start = datetime.strptime(start, settings.DATE_T)
     time_end = datetime.strptime(end, settings.DATE_T)
 
-    obj_item = await views.period_item(time_start, time_end, db)
-    not_item = await views.not_period(db)
+    obj_item = await views.period_item(time_start, time_end, session)
+    not_item = await views.not_period(session)
 
     context = {
         "request": request,
@@ -139,93 +137,102 @@ async def get_reserve_choice(
 async def get_reserve_details(
     request: Request,
     id: int,
-    current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    current_user: Annotated[int, Depends(access_user_id)],
+    session: AsyncSession = Depends(get_session),
 ):
-    stmt = db.execute(select(models.Item).where(models.Item.id == id))
-    i = stmt.scalars().first()
+    if current_user:
+        
+        i = await left_right_first(session, models.Item, models.Item.id, id)
+        token = await get_token_reserve(request)
 
-    token = await get_token_reserve(request)
+        start = token["start"]
+        end = token["end"]
+        reserve_period = token["reserve_period"]
 
-    start = token["start"]
-    end = token["end"]
-    reserve_period = token["reserve_period"]
+        time_start = datetime.strptime(start, settings.DATE_T)
+        time_end = datetime.strptime(end, settings.DATE_T)
 
-    time_start = datetime.strptime(start, settings.DATE_T)
-    time_end = datetime.strptime(end, settings.DATE_T)
+        context = {
+            "request": request,
+            "time_start": time_start,
+            "time_end": time_end,
+            "reserve_period": reserve_period,
+            "i": i,
+        }
+        template = "reserve/reserve_details.html"
 
-    context = {
-        "request": request,
-        "time_start": time_start,
-        "time_end": time_end,
-        "reserve_period": reserve_period,
-        "i": i,
-    }
-    template = "reserve/reserve_details.html"
-
-    return templates.TemplateResponse(template, context)
+        return templates.TemplateResponse(template, context)
+    return responses.RedirectResponse("/login")
 
 
 @router.post("/reserve-details/{id}")
 async def reserve_details(
     request: Request,
     id: int,
-    current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    current_user: Annotated[int, Depends(access_user_id)],
+    session: AsyncSession = Depends(get_session),
 ):
-    form = await request.form()
-    description = form["description"]
-    token = await get_token_reserve(request)
+    if current_user:
+        form = await request.form()
+        description = form["description"]
+        token = await get_token_reserve(request)
 
-    start = token["start"]
-    end = token["end"]
-    reserve_period = token["reserve_period"]
+        start = token["start"]
+        end = token["end"]
 
-    time_start = datetime.strptime(start, settings.DATE_T)
-    time_end = datetime.strptime(end, settings.DATE_T)
+        time_start = datetime.strptime(start, settings.DATE_T)
+        time_end = datetime.strptime(end, settings.DATE_T)
 
-    # ..
-    query = insert(reserverent.ReserveRentFor).values(
-        time_start=time_start,
-        time_end=time_end,
-        description=description,
-        rrf_us_id=current_user.id,
-        rrf_tm_id=id,
-        created_at=datetime.now(),
-    )
-    db.execute(query)
-    db.commit()
-    # ..
-    return responses.RedirectResponse(
-        f"/item-detail/{id}",
-        status_code=302,
-    )
+        # ..
+        query = insert(reserverent.ReserveRentFor).values(
+            time_start=time_start,
+            time_end=time_end,
+            description=description,
+            rrf_us_id=current_user.id,
+            rrf_tm_id=id,
+            created_at=datetime.now(),
+        )
+        session.execute(query)
+        await session.commit()
+        # ..
+        return responses.RedirectResponse(
+            f"/item-detail/{id}",
+            status_code=302,
+        )
+    return responses.RedirectResponse("/login")
 
 
 @router.get("/list-reserve")
 async def list_reserve(
     request: Request,
-    current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    current_user: Annotated[int, Depends(access_user_id)],
+    session: AsyncSession = Depends(get_session),
 ):
-    rrf_us_id = current_user.id
-    obj_list = await views.rrf_list(rrf_us_id, db)
 
-    return templates.TemplateResponse(
-        "reserve/list.html", {"request": request, "obj_list": obj_list}
-    )
+    if current_user:
+        obj_list = await left_right_all(
+            session,
+            reserverent.ReserveRentFor,
+            reserverent.ReserveRentFor.rrf_us_id,
+            current_user.id,
+        )
+        return templates.TemplateResponse(
+            "reserve/list.html", {"request": request, "obj_list": obj_list}
+        )
+    return responses.RedirectResponse("/login")
 
 
 @router.get("/details-reserve/{id}")
 async def details_reserve(
     request: Request,
     id: int,
-    current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    current_user: Annotated[int, Depends(access_user_id)],
+    session: AsyncSession = Depends(get_session),
 ):
-    rrf_us_id = current_user.id
-    obj = await views.rrf_details(id, rrf_us_id, db)
 
-    return templates.TemplateResponse(
-        "reserve/details.html", {"request": request, "obj": obj}
-    )
+    if current_user:
+        obj = await views.rrf_details(id, current_user.id, session)
+        return templates.TemplateResponse(
+            "reserve/details.html", {"request": request, "obj": obj}
+        )
+    return responses.RedirectResponse("/login")

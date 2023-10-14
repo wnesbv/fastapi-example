@@ -1,15 +1,17 @@
+
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
 from pydantic import EmailStr
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from models import models
 from user import schemas
+from item import schemas as tm_schemas
 
-from config.dependency import get_db
+from config.dependency import get_session
 from user.views import get_active_user
 
 
@@ -24,67 +26,45 @@ def get_user_profile(
 
 
 @router.get("/user-relationship", response_model=schemas.IUser)
-def user_relationship(
+async def user_relationship(
     current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
-
-    obj_tm = (
-        db.execute(
-            select(
-                models.Item.id,
-                models.Item.title,
-                models.Item.description,
-                models.Item.owner_item_id,
-            )
-            .join(models.User.user_item)
-            .where(models.Item.owner_item_id == current_user.id)
-        )
-        .unique()
-        .all()
+    stmt = await session.execute(
+        select(models.Item.id)
+        .where(models.Item.owner_item_id == current_user.id)
     )
+    obj_tm = stmt.scalars().all()
     print("obj_tm..", obj_tm)
-    obj_cm = (
-        db.execute(
-            select(
-                models.Comment.id,
-                models.Comment.opinion_expressed,
-                models.Comment.cmt_user_id,
-                models.Comment.cmt_item_id,
-            )
-            .join(models.User.user_cmt)
-            .where(models.Comment.cmt_user_id == current_user.id)
-        )
-        .unique()
-        .all()
+
+    stmt = await session.execute(
+        select(models.Comment.id)
+        .where(models.Comment.cmt_user_id == current_user.id)
     )
+    obj_cm = stmt.scalars().all()
     print("obj_cm..", obj_cm)
-    obj_l = (
-        db.execute(
-            select(
-                models.Like.upvote, models.Like.like_user_id, models.Like.like_item_id
-            )
-            .join(models.User.user_like)
-            .where(models.Like.like_user_id == current_user.id)
-        )
-        .unique()
-        .all()
+
+    stmt = await session.execute(
+        select(models.Like.upvote)
+        .where(models.Like.like_user_id == current_user.id)
     )
+    obj_l = stmt.scalars().all()
     print("obj_l..", obj_l)
-    obj_dl = (
-        db.execute(
-            select(
-                models.Dislike.downvote,
-                models.Dislike.dislike_user_id,
-                models.Dislike.dislike_item_id,
-            )
-            .join(models.User.user_dislike)
-            .where(models.Dislike.dislike_user_id == current_user.id)
-        )
-        .unique()
-        .all()
+
+    stmt = await session.execute(
+        select(models.Dislike.downvote)
+        .where(models.Dislike.dislike_user_id == current_user.id)
     )
+    obj_dl = stmt.scalars().all()
     print("obj_dl..", obj_dl)
+
+    stmt = await session.execute(
+        select(models.Item)
+        .where(models.Item.owner_item_id == current_user.id)
+    )
+    tm_all = stmt.scalars().all()
+
+    for_item = [schemas.InItem.parse_obj(user) for user in tm_all]
 
     obj = schemas.IUser(
         id=current_user.id,
@@ -96,6 +76,7 @@ def user_relationship(
         user_cmt=obj_cm,
         user_like=obj_l,
         user_dislike=obj_dl,
+        in_user=for_item
     )
 
     return obj

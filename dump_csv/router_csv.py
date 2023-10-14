@@ -19,11 +19,11 @@ from fastapi import (
 )
 from fastapi.templating import Jinja2Templates
 
-from sqlalchemy.orm import Session
-from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from user.views import get_active_user
-from config.dependency import get_db
+from config.dependency import get_session
+from options_select.opt import in_all, left_right_first, left_right_all
 
 from models import models
 
@@ -36,23 +36,15 @@ router = APIRouter(include_in_schema=False)
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
 
-def query_user_id(
-    owner_item_id: int,
-    db: Session = Depends(get_db),
-):
-    stmt = db.execute(
-        select(models.Item).where(models.Item.owner_item_id == owner_item_id)
-    )
-    result = stmt.scalars().all()
-    return result
-
-
 @router.get("/dump-item")
-def export_csv(
+async def export_csv(
     current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
-    detal = query_user_id(db=db, owner_item_id=current_user.id)
+
+    detal = await left_right_all(
+        session, models.Item, models.Item.owner_item_id, current_user.id
+    )
 
     file_time = datetime.now()
     directory = BASE_DIR / f"static/csv/{file_time.strftime('%Y-%m-%d-%H-%M-%S')}.csv"
@@ -95,19 +87,21 @@ def export_csv(
 @router.get("/import-csv")
 async def ge_import_csv(
     request: Request,
-    db: Session = Depends(get_db),
 ):
     return templates.TemplateResponse("import_csv.html", {"request": request})
 
 
 
 @router.post("/import-csv")
-def import_csv(
+async def import_csv(
     current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
-    url_f: UploadFile = File(...),
+    session: AsyncSession = Depends(get_session),
+    url_file: UploadFile = File(...),
 ):
-    db.query(models.Item).filter(models.Item.owner_item_id == current_user.id).delete()
+
+    query = delete(models.Item).where(models.Item.owner_item_id == current_user.id)
+
+    await session.execute(query)
 
     # save_path = "./static/csv"
     # file_path = f"{save_path}/{url_file.filename}"
@@ -115,12 +109,12 @@ def import_csv(
     temp = tempfile.NamedTemporaryFile(delete=False)
     print("temp name..", temp.name)
 
-    contents = url_f.file.read()
+    contents = url_file.file.read()
 
     with temp as csvf:
         csvf.write(contents)
 
-    url_f.file.close()
+    url_file.file.close()
 
     with open(temp.name, "r", encoding="utf-8") as csvfile:
         obj = [
@@ -137,11 +131,11 @@ def import_csv(
             for i in csv.DictReader(csvfile)
         ]
         # ..
-        db.add_all(obj)
-        db.commit()
+        session.add_all(obj)
+        await session.commit()
         # ..
         csvfile.close()
-        Path.unlink(f"{temp.name}")
+        Path.unlink(f"{ temp.name }")
 
         return responses.RedirectResponse(
             "/item-list", status_code=status.HTTP_302_FOUND

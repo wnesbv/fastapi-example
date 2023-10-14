@@ -1,7 +1,9 @@
-
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated
+
+from sqlalchemy import func, and_, or_, not_, true, false
+from sqlalchemy.future import select
 
 from fastapi import (
     HTTPException,
@@ -15,14 +17,13 @@ from fastapi import (
     status,
 )
 
-from pydantic import EmailStr
-
 from fastapi.templating import Jinja2Templates
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from user.views import get_active_user
-from config.dependency import get_db
+from config.dependency import get_session
+from user.views import access_user_id
+from options_select.opt import in_all, left_right_first, left_right_all
 
 from models import models
 
@@ -34,33 +35,32 @@ router = APIRouter(include_in_schema=False)
 
 
 @router.get("/create-item")
-def get_create_item(
+async def get_create_item(
     request: Request,
-    current_user: Annotated[EmailStr, Depends(get_active_user)],
+    current_user: Annotated[int, Depends(access_user_id)],
 ):
-    msg = ""
-    if "msg" in request.query_params:
-        msg = request.query_params["msg"]
-        return templates.TemplateResponse(
-            "item/create.html", {"request": request, "msg": msg}
-        )
-    return templates.TemplateResponse("item/create.html", {"request": request})
+    if current_user:
+        msg = ""
+        if "msg" in request.query_params:
+            msg = request.query_params["msg"]
+            return templates.TemplateResponse(
+                "item/create.html", {"request": request, "msg": msg}
+            )
+        return templates.TemplateResponse("item/create.html", {"request": request})
+    return responses.RedirectResponse("/login")
 
 
 @router.post("/create-item")
 async def create_item(
-    current_user: Annotated[EmailStr, Depends(get_active_user)],
+    current_user: Annotated[int, Depends(access_user_id)],
     title: str = Form(...),
     description: str = Form(...),
     category: str = Form(""),
     image_url: UploadFile = File(""),
     created_at: datetime = datetime.now(),
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
-
-    exists = db.query(
-        models.Item
-    ).filter(models.Item.title == title).first()
+    exists = await left_right_first(session, models.Item, models.Item.title, title)
 
     if exists:
         return responses.RedirectResponse(
@@ -73,31 +73,32 @@ async def create_item(
         # )
 
     if image_url.filename == "" or category == "":
-
-        i = schemas.ItemBase(
-            title=title, description=description
-        )
+        obj_in = schemas.ItemBase(title=title, description=description)
         obj = await views.create_not_img_item(
-            owner_item_id=current_user.id, created_at=created_at, obj_in=i, db=db,
+            current_user.id,
+            created_at,
+            obj_in,
+            session,
         )
         return responses.RedirectResponse(
             f"/item-detail/{ obj.id }/?msg=sucesso..!",
-            status_code=status.HTTP_302_FOUND
+            status_code=status.HTTP_302_FOUND,
         )
-
-    img = schemas.ItemCreate(
-        title=title, description=description, image_url=image_url
-    )
+    # ..
+    obj_in = schemas.ItemCreate(title=title, description=description, image_url=image_url)
 
     upload = await views.img_creat(category, image_url)
-
     obj_img = await views.create_new_item(
-        image_url=upload, owner_item_id=current_user.id, created_at=created_at, obj_in=img, db=db,
+        upload,
+        current_user.id,
+        created_at,
+        obj_in,
+        session,
     )
 
     return responses.RedirectResponse(
         f"/item-detail/{ obj_img.id }/?msg=sucesso..!",
-        status_code=status.HTTP_302_FOUND
+        status_code=status.HTTP_302_FOUND,
     )
 
 
@@ -108,20 +109,18 @@ async def create_item(
 async def get_update(
     request: Request,
     id: int,
-    current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    current_user: Annotated[int, Depends(access_user_id)],
+    session: AsyncSession = Depends(get_session),
 ):
-    obj = await views.retreive_item(id=id, db=db)
-    if obj.owner_item_id == current_user.id:
+    obj = await left_right_first(session, models.Item, models.Item.id, id)
+    if obj.owner_item_id == current_user:
         return templates.TemplateResponse(
             "item/update.html",
             {
                 "request": request,
-                "id": id,
                 "obj": obj,
             },
         )
-
     return templates.TemplateResponse(
         "components/error.html",
         {
@@ -140,34 +139,26 @@ async def update(
     image_url: UploadFile = File(""),
     delete_bool: bool = Form(False),
     modified_at: datetime = datetime.now(),
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
-
-    obj = await views.retreive_item(id=id, db=db)
+    obj = await left_right_first(session, models.Item, models.Item.id, id)
 
     if image_url.filename == "" or category == "":
-
         i = schemas.ItemBase(
             title=title,
             description=description,
             modified_at=modified_at,
         )
-        await views.update_item(
-            id=id, modified_at=modified_at, obj_in=i,  db=db,
-        )
+        await views.update_item(id, modified_at, i, session)
 
         if delete_bool is True:
-
             if Path(f".{obj.image_url}").exists():
                 Path.unlink(f".{obj.image_url}")
 
-            img_del = schemas.ImgDel(
-                image_url=image_url,
+            img_not = schemas.ImgDel(
                 modified_at=modified_at,
             )
-            await views.img_del(
-                id=id, image_url="", modified_at=modified_at, obj_in=img_del, db=db,
-            )
+            await views.img_del(id, modified_at, img_not, session)
 
             return responses.RedirectResponse(
                 f"/item-detail/{id }",
@@ -186,9 +177,7 @@ async def update(
     )
     upload = await views.img_creat(category, image_url)
 
-    await views.img_update_item(
-        id=id, image_url=upload, modified_at=modified_at, obj_in=img,  db=db
-    )
+    await views.img_update_item(id, upload, modified_at, img, session)
     return responses.RedirectResponse(
         f"/item-detail/{id }",
         status_code=status.HTTP_302_FOUND,
@@ -199,41 +188,51 @@ async def update(
 
 
 @router.get("/list-item-delete")
-def list_item_delete(
+async def list_item_delete(
     request: Request,
-    current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    current_user: Annotated[int, Depends(access_user_id)],
+    session: AsyncSession = Depends(get_session),
 ):
-    owner_item_id=current_user.id
-    obj_list = views.list_user_item(owner_item_id, db)
 
-    return templates.TemplateResponse(
-        "item/list_delete.html", {"request": request, "obj_list": obj_list}
-    )
+    if current_user:
+
+        obj_list = await left_right_all(
+            session, models.Item, models.Item.owner_item_id, current_user.id
+        )
+        return templates.TemplateResponse(
+            "item/list_delete.html", {"request": request, "obj_list": obj_list}
+        )
+    return responses.RedirectResponse("/login")
 
 
 @router.get("/delete-item/{id}")
 async def get_delete(
-    id: int, request: Request, db: Session = Depends(get_db)
+    id: int,
+    request: Request,
+    current_user: Annotated[int, Depends(access_user_id)],
+    session: AsyncSession = Depends(get_session),
 ):
 
-    obj = await views.retreive_item(id=id, db=db)
+    if current_user:
+        obj = await views.item_owner(id, current_user.id, session)
 
-    return templates.TemplateResponse(
-        "item/delete.html", {"request": request, "obj": obj}
-    )
+        return templates.TemplateResponse(
+            "item/delete.html", {"request": request, "obj": obj}
+        )
+    return responses.RedirectResponse("/login")
 
 
 @router.post("/delete-item/{id}")
 async def delete_item(
     id: str,
-    current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    current_user: Annotated[int, Depends(access_user_id)],
+    session: AsyncSession = Depends(get_session),
 ):
-    obj = await views.retreive_item(id=id, db=db)
+
+    obj = await views.item_owner(id, current_user.id, session)
 
     if obj.owner_item_id == current_user.id or current_user.is_admin:
-        await views.item_delete(id=id, db=db)
+        await views.item_delete(id, current_user.id, session)
 
         return responses.RedirectResponse(
             "/list-item-delete/", status_code=status.HTTP_302_FOUND
@@ -247,13 +246,13 @@ async def delete_item(
 
 
 @router.get("/item-list")
-def item_list(
+async def item_list(
     request: Request,
     msg: str = None,
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
 
-    obj_list = views.list_item(db=db)
+    obj_list = await in_all(session, models.Item)
 
     return templates.TemplateResponse(
         "item/list.html", {"request": request, "obj_list": obj_list, "msg": msg}
@@ -261,15 +260,15 @@ def item_list(
 
 
 @router.get("/list-user-item")
-def user_item_list(
+async def user_item_list(
     request: Request,
-    current_user: Annotated[EmailStr, Depends(get_active_user)],
+    current_user: Annotated[int, Depends(access_user_id)],
     msg: str = None,
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
 
-    obj_list = views.list_user_item(
-        owner_item_id=current_user.id, db=db
+    obj_list = await left_right_all(
+        session, models.Item, models.Item.owner_item_id, current_user.id
     )
 
     return templates.TemplateResponse(
@@ -284,28 +283,34 @@ def user_item_list(
 async def item_detail(
     id: int,
     request: Request,
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
-    obj = await views.retreive_item(id=id, db=db)
+    # ..
+    obj = await left_right_first(session, models.Item, models.Item.id, id)
+
+    # ..
+    cmt_list = await left_right_all(
+        session, models.Comment, models.Comment.cmt_item_id, id
+    )
+    # ..
+    stmt = await session.execute(
+        select(models.Like.like_item_id).where(models.Like.like_item_id == id)
+    )
+    obj_like = stmt.scalars().all()
+    # ..
+    total_like = len(list(obj_like))
 
     # ...
-    cmt_list = db.query(
-        models.Comment
-    ).filter(models.Comment.cmt_item_id == id)
+    stmt = await session.execute(
+        select(models.Dislike.dislike_item_id).where(
+            models.Dislike.dislike_item_id == id
+        )
+    )
+    obj_dislike = stmt.scalars().all()
+    # ..
+    total_dislike = len(list(obj_dislike))
 
     # ...
-    obj_like = db.query(
-        models.Like
-    ).filter(models.Like.like_item_id == id)
-    total_like = obj_like.count()
-
-    # ...
-    obj_dislike = db.query(
-        models.Dislike
-    ).filter(models.Dislike.dislike_item_id == id)
-    total_dislike = obj_dislike.count()
-    # ...
-
     msg = ""
     if "msg" in request.query_params:
         msg = request.query_params["msg"]

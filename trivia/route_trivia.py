@@ -1,52 +1,41 @@
-
 from fastapi import (
     APIRouter,
     Depends,
     Request,
 )
-
 from fastapi.templating import Jinja2Templates
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from user import schemas
-
+from models import models
 from item.views import search_item
-from user.views import get_active_user, list_user
-from config.dependency import get_db
+from config.dependency import get_session
+from options_select.opt import in_all
 
 
 templates = Jinja2Templates(directory="templates")
 router = APIRouter(include_in_schema=False)
 
 
-@router.get("/search/")
-def autocomplete(
-    request: Request,
-    query: str | None = None,
-    db: Session = Depends(get_db)
+@router.get("/")
+async def home(
+    request: Request, session: AsyncSession = Depends(get_session), msg: str = None
 ):
-
-    obj_list = search_item(query, db=db)
+    obj_list = await in_all(session, models.User)
 
     return templates.TemplateResponse(
-        "components/search.html",
-        {"request": request, "obj_list": obj_list}
+        "index.html", {"request": request, "obj_list": obj_list, "msg": msg}
     )
 
 
-# ...
-
-@router.get("/")
-async def home(
+@router.get("/search/")
+async def autocomplete(
     request: Request,
-    db: Session = Depends(get_db),
-    msg: str = None
+    query: str | None = None,
+    session: AsyncSession = Depends(get_session),
 ):
-
-    obj_list = list_user(db=db)
+    obj_list = await search_item(query, session=session)
 
     return templates.TemplateResponse(
-        "index.html",
-        {"request": request, "obj_list": obj_list, "msg": msg}
+        "components/search.html", {"request": request, "obj_list": obj_list}
     )

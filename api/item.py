@@ -1,27 +1,25 @@
 from datetime import datetime
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import (
     APIRouter,
     Depends,
-    Request,
     Form,
     File,
     UploadFile,
-    status,
-    responses,
 )
 
 from pydantic import EmailStr
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from models import models
 from item import schemas, views
 
-from config.dependency import get_db
+from config.dependency import get_session
 from user.views import get_active_user
+from options_select.opt import in_all, left_right_first, left_right_all
 
 
 router = APIRouter(prefix="/docs", tags=["Item"])
@@ -33,36 +31,30 @@ async def create_item(
     title: str = Form(...),
     description: str = Form(...),
     category: str = Form(""),
-    image_url: UploadFile = File(None),
-    db: Session = Depends(get_db),
+    image_url: UploadFile = File(""),
+    session: AsyncSession = Depends(get_session),
 ):
-    exists = db.query(models.Item).filter(models.Item.title == title).first()
+    exists = await left_right_first(session, models.Item, models.Item.title, title)
 
     if exists:
         return {"msg": "such a title already exists..!"}
 
     if not image_url or not category:
-        i = schemas.ItemBase(title=title, description=description)
-        await views.api_not_img_item(
-            owner_item_id=current_user.id,
-            created_at=datetime.now(),
-            obj_in=i,
-            db=db,
-        )
-        return i
 
-    img = schemas.ItemCreate(title=title, description=description, image_url=image_url)
+        obj_in = schemas.ItemBase(title=title, description=description)
+
+        await views.api_not_img_item(current_user.id, datetime.now(), obj_in, session)
+
+        return obj_in
+
+    obj_in = schemas.ItemCreate(
+        title=title, description=description, image_url=image_url
+    )
     upload = await views.img_creat(category, image_url)
 
-    await views.api_new_item(
-        image_url=upload,
-        owner_item_id=current_user.id,
-        created_at=datetime.now(),
-        obj_in=img,
-        db=db,
-    )
+    await views.api_new_item(upload, current_user.id, datetime.now(), obj_in, session)
 
-    return img
+    return obj_in
 
 
 # ...update
@@ -72,12 +64,12 @@ async def create_item(
 async def get_update(
     id: int,
     current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
-    i = await views.retreive_item(id=id, db=db)
+    i = await left_right_first(session, models.Item, models.Item.id, id)
 
     if i.owner_item_id == current_user.id:
-        obj = schemas.ListItem(
+        obj_in = schemas.ListItem(
             id=i.id,
             title=i.title,
             description=i.description,
@@ -87,7 +79,7 @@ async def get_update(
             owner_item_id=i.owner_item_id,
         )
 
-        return obj
+        return obj_in
 
     return {"msg": "You are not permitted..!"}
 
@@ -100,108 +92,101 @@ async def update(
     category: str = Form(""),
     image_url: UploadFile = File(""),
     delete_bool: bool = Form(False),
-    db: Session = Depends(get_db),
+    modified_at: datetime = datetime.now(),
+    session: AsyncSession = Depends(get_session),
 ):
-
-    i = await views.retreive_item(id=id, db=db)
+    i = await left_right_first(session, models.Item, models.Item.id, id)
 
     if not title:
         if not description:
             if not image_url and not category:
-                obj_file = schemas.ItemBase(
+                obj_in = schemas.ItemBase(
                     title=title,
                     description=description,
                 )
                 await views.api_update_item(
-                    id=id,
-                    title=i.title,
-                    description=i.description,
-                    image_url=i.image_url,
-                    modified_at=datetime.now(),
-                    obj_in=obj_file,
-                    db=db,
+                    id,
+                    i.title,
+                    i.description,
+                    i.image_url,
+                    datetime.now(),
+                    obj_in,
+                    session,
                 )
 
                 if delete_bool is True:
-
                     if Path(f".{i.image_url}").exists():
                         Path.unlink(f".{i.image_url}")
 
-                    img_del = schemas.ImgDel(
+                    img_not = schemas.ImgDel(
                         image_url=image_url,
                         modified_at=datetime.now(),
                     )
-                    await views.img_del(
-                        id=id, image_url="",
-                        modified_at=datetime.now(),
-                        obj_in=img_del,
-                        db=db,
-                    )
-                    return img_del
+                    await views.img_del(id, modified_at, img_not, session)
+                    return img_not
 
-                return obj_file
+                return obj_in
 
-            img = schemas.ItemCreate(
+            obj_in = schemas.ItemCreate(
                 title=title,
                 description=description,
                 image_url=image_url,
             )
             upload = await views.img_creat(category, image_url)
             await views.api_img_item(
-                id=id,
-                title=i.title,
-                description=i.description,
-                image_url=upload,
-                modified_at=datetime.now(),
-                obj_in=img,
-                db=db
+                id,
+                i.title,
+                i.description,
+                upload,
+                datetime.now(),
+                obj_in,
+                session,
             )
-            return img
+            return obj_in
 
-
-        obj_str = schemas.ItemUpdate(
+        obj_in = schemas.ItemUpdate(
             title=title,
             description=description,
             image_url=image_url,
         )
         await views.api_update_item(
-            id=id,
-            title=i.title,
-            description=description,
-            image_url=i.image_url,
-            modified_at=datetime.now(),
-            obj_in=obj_str,
-            db=db,
+            id,
+            i.title,
+            description,
+            i.image_url,
+            datetime.now(),
+            obj_in,
+            session,
         )
-        return obj_str
+        return obj_in
 
-    obj_str = schemas.ItemUpdate(
+    obj_in = schemas.ItemUpdate(
         title=title,
         description=description,
         image_url=image_url,
     )
     await views.api_update_item(
-        id=id,
-        title=title,
-        description=i.description,
-        image_url=i.image_url,
-        modified_at=datetime.now(),
-        obj_in=obj_str,
-        db=db,
+        id,
+        title,
+        i.description,
+        i.image_url,
+        datetime.now(),
+        obj_in,
+        session,
     )
-    return obj_str
+    return obj_in
 
 
 # ...list
 
 
 @router.get("/item-list", response_model=list[schemas.ListItem])
-def item_list(
-    db: Session = Depends(get_db),
+async def item_list(
+    session: AsyncSession = Depends(get_session),
 ):
-    obj_list = db.execute(select(models.Item)).scalars().all()
+    obj_list = await in_all(session, models.Item)
 
-    obj = [
+    obj_in = [
         schemas.ListItem(
             id=i.id,
             title=i.title,
@@ -213,76 +198,37 @@ def item_list(
         )
         for i in obj_list
     ]
-    return obj
+    return obj_in
 
 
 @router.get("/item-id/{id}", response_model=schemas.Item)
-def item_id(
+async def item_id(
     id: int,
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
-    obj_tm = (
-        db.execute(
-            select(
-                models.User.id,
-                models.User.email,
-                models.User.email_verified,
-                models.User.is_active,
-                models.User.is_admin,
-            )
-            .join(models.Item.item_user)
-            .where(models.Item.id == id)
-        )
-        .unique()
-        .all()
-    )
+    stmt = await session.execute(select(models.Item.id).where(models.Item.id == id))
+    obj_tm = stmt.scalars().all()
     print("obj_tm..", obj_tm)
 
-    obj_cm = (
-        db.execute(
-            select(
-                models.Comment.id,
-                models.Comment.opinion_expressed,
-                models.Comment.cmt_user_id,
-                models.Comment.cmt_item_id,
-            )
-            .join(models.Item.item_cmt)
-            .where(models.Item.id == id)
-        )
-        .unique()
-        .all()
+    stmt = await session.execute(
+        select(models.Comment.id).where(models.Comment.cmt_item_id == id)
     )
+    obj_cm = stmt.scalars().all()
     print("obj_cm..", obj_cm)
 
-    obj_l = (
-        db.execute(
-            select(
-                models.Like.upvote, models.Like.like_user_id, models.Like.like_item_id
-            )
-            .join(models.Item.item_like)
-            .where(models.Item.id == id)
-        )
-        .unique()
-        .all()
+    stmt = await session.execute(
+        select(models.Like.upvote).where(models.Like.like_item_id == id)
     )
+    obj_l = stmt.scalars().all()
     print("obj_l..", obj_l)
 
-    obj_dl = (
-        db.execute(
-            select(
-                models.Dislike.downvote,
-                models.Dislike.dislike_user_id,
-                models.Dislike.dislike_item_id,
-            )
-            .join(models.Item.item_dislike)
-            .where(models.Item.id == id)
-        )
-        .unique()
-        .all()
+    stmt = await session.execute(
+        select(models.Dislike.downvote).where(models.Dislike.dislike_item_id == id)
     )
+    obj_dl = stmt.scalars().all()
     print("obj_dl..", obj_dl)
 
-    i = db.scalars(select(models.Item).where(models.Item.id == id)).first()
+    i = await left_right_first(session, models.Item, models.Item.id, id)
 
     obj = schemas.Item(
         id=i.id,
@@ -302,16 +248,14 @@ def item_id(
 
 
 @router.get("/user-item", response_model=list[schemas.ListItem])
-def get_user_item(
+async def get_user_item(
     current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
-    stmt = db.execute(
-        select(models.Item).where(models.Item.owner_item_id == current_user.id)
-    )
-    result = stmt.scalars().all()
 
-    obj = [
+    result = await left_right_all(session, models.Item, models.Item.owner_item_id, current_user.id)
+
+    obj_in = [
         schemas.ListItem(
             id=i.id,
             title=i.title,
@@ -323,4 +267,4 @@ def get_user_item(
         )
         for i in result
     ]
-    return obj
+    return obj_in

@@ -16,19 +16,19 @@ from fastapi import (
 
 from pydantic import EmailStr
 
-from fastapi.templating import Jinja2Templates
 from sqlalchemy import insert
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from user.views import get_active_user
-from config.dependency import get_db
+from config.dependency import get_session
 from config.settings import settings
 
 from models import models, reserverent
 
 from item import schemas as item_schemas
 from reserve import schemas, views
+from options_select.opt import in_all, left_right_first, left_right_all
 
 
 router = APIRouter(prefix="/docs", tags=["Reserve"])
@@ -87,7 +87,7 @@ async def get_token_reserve(
 @router.get("/reserve/choice")
 async def get_reserve_choice(
     request: Request,
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
     token = await get_token_reserve(request)
 
@@ -98,8 +98,8 @@ async def get_reserve_choice(
     time_start = datetime.strptime(start, settings.DATE_T)
     time_end = datetime.strptime(end, settings.DATE_T)
 
-    obj_item = await views.period_item(time_start, time_end, db)
-    not_item = await views.not_period(db)
+    obj_item = await views.period_item(time_start, time_end, session)
+    not_item = await views.not_period(session)
 
 
     obj_in = [
@@ -136,12 +136,12 @@ async def get_reserve_choice(
 async def get_reserve_details(
     id: int,
     current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
-    stmt = db.execute(select(models.Item).where(models.Item.id == id))
-    i = stmt.scalars().first()
 
-    obj = item_schemas.ListItem(
+    i = await left_right_first(session, models.Item, models.Item.id, id)
+
+    obj_in = item_schemas.ListItem(
         id=i.id,
         title=i.title,
         description=i.description,
@@ -151,7 +151,7 @@ async def get_reserve_details(
         owner_item_id=i.owner_item_id,
     )
 
-    return obj
+    return obj_in
 
 
 @router.post("/reserve-details_add/{id}")
@@ -160,7 +160,7 @@ async def reserve_details(
     id: int,
     current_user: Annotated[EmailStr, Depends(get_active_user)],
     description: str = Form(...),
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
 
     token = await get_token_reserve(request)
@@ -181,8 +181,8 @@ async def reserve_details(
         rrf_tm_id=id,
         created_at=datetime.now(),
     )
-    db.execute(query)
-    db.commit()
+    session.execute(query)
+    await session.commit()
     # ..
     return {"msg": "Ok..!"}
 
@@ -190,10 +190,15 @@ async def reserve_details(
 @router.get("/list-reserve")
 async def list_user_reserve(
     current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
-    rrf_us_id = current_user.id
-    obj_list = await views.rrf_list(rrf_us_id, db)
+
+    obj_list = await left_right_all(
+        session,
+        reserverent.ReserveRentFor,
+        reserverent.ReserveRentFor.rrf_us_id,
+        current_user.id,
+    )
 
     rrf_user_list = [
         schemas.ReserveList(
@@ -216,12 +221,12 @@ async def list_user_reserve(
 async def details_reserve(
     id: int,
     current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
     rrf_us_id = current_user.id
-    i = await views.rrf_details(id, rrf_us_id, db)
+    i = await views.rrf_details(id, rrf_us_id, session)
 
-    obj = schemas.ReserveList(
+    obj_in = schemas.ReserveList(
         id=i.id,
         description=i.description,
         time_start=i.time_start,
@@ -234,4 +239,4 @@ async def details_reserve(
     )
 
 
-    return obj
+    return obj_in

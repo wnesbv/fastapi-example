@@ -12,7 +12,7 @@ from fastapi import (
     status,
 )
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import models
 from item import schemas

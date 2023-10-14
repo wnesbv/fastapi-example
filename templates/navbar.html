@@ -30,11 +30,29 @@
                     <a class="nav-link" href="/item-list">item list</a>
                 </li>
 
-                <li class="nav-item">
-                    <a class="nav-link" href="/dump-item">dump</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/import-csv">csv</a>
+                <li class="nav-item dropdown">
+                    <a
+                        class="nav-link dropdown-toggle"
+                        href="#"
+                        id="navbarDropdown"
+                        role="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                    >
+                        csv
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <li>
+                            <a class="dropdown-item" href="/dump-item">dump</a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="/import-csv">import csv</a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider" />
+                        </li>
+
+                    </ul>
                 </li>
 
                 <li class="nav-item dropdown">

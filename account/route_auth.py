@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from typing import Annotated
 from fastapi import (
@@ -13,10 +12,11 @@ from fastapi import (
 from pydantic import EmailStr
 from fastapi.templating import Jinja2Templates
 
-from sqlalchemy.orm import Session
+from sqlalchemy import update as sql_update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from user import schemas as user_schemas
-from config.dependency import get_db
+from config.dependency import get_session
 from user.views import get_active_user
 
 from models import models
@@ -30,10 +30,7 @@ router = APIRouter(include_in_schema=False)
 
 @router.get("/register")
 def get_register(request: Request):
-
-    return templates.TemplateResponse(
-        "auth/register.html", {"request": request}
-    )
+    return templates.TemplateResponse("auth/register.html", {"request": request})
 
 
 @router.post("/register")
@@ -43,81 +40,62 @@ async def register(
     email: EmailStr = Form(...),
     password: str = Form(...),
     created_at: datetime = datetime.now(),
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
-
-    user = user_schemas.UserCreate(
-        email=email, created_at=created_at
-    )
-
-    obj = await views.create_user(
-        request=request,
-        background_tasks=background_tasks,
-        user=user,
-        password=auth.hash_password(password),
-        db=db,
+    obj_in = user_schemas.UserCreate(email=email, created_at=created_at)
+    user = await views.create_user(
+        request,
+        obj_in,
+        auth.hash_password(password),
+        background_tasks,
+        session,
     )
     return responses.RedirectResponse(
-        f"/user-detail/{obj.id}", status_code=status.HTTP_302_FOUND
+        f"/user-detail/{user.id}", status_code=status.HTTP_302_FOUND
     )
 
 
 # ...
-
-
 @router.get("/login")
 def get_login(request: Request):
-
-    return templates.TemplateResponse("auth/login.html",
-        {"request": request}
-    )
+    return templates.TemplateResponse("auth/login.html", {"request": request})
 
 
 @router.post("/login")
 async def login(
     request: Request,
-    bg_tasks: BackgroundTasks,
+    background_tasks: BackgroundTasks,
     email: str = Form(...),
     password: str = Form(...),
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
-
-    user_details = schemas.LoginDetails(
-        email=email, password=password
-    )
-    response = responses.RedirectResponse(
-        "/", status_code=status.HTTP_302_FOUND
-    )
+    obj_in = schemas.LoginDetails(email=email, password=password)
+    response = responses.RedirectResponse("/", status_code=status.HTTP_302_FOUND)
     response.token = await views.login_user(
-        request, response, bg_tasks, user_details, db
+        request, response, background_tasks, obj_in, session
     )
     return response
-
 
 
 @router.get("/verify-email")
 async def confirmation_email(
     request: Request,
     token: str,
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
-
-    response = await views.account_verify_email(token, db)
+    response = await views.account_verify_email(token, session)
     msg = "Электронная почта успешно подтверждена"
     response = templates.TemplateResponse(
-        "index.html", {"request": request, "msg": msg}
+        "base.html", {"request": request, "msg": msg}
     )
     return response
 
 
 # ...
-
-
 @router.get("/email-verify-resend")
 def get_verification_email(
     request: Request,
 ):
-
     return templates.TemplateResponse(
         "auth/resend_verification_email.html",
         {"request": request},
@@ -129,10 +107,10 @@ async def resend_verification_email(
     requests: Request,
     background_tasks: BackgroundTasks,
     email: str = Form(...),
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
     response = await views.resend_verification_email(
-        email, background_tasks, requests, db
+        requests, background_tasks, email, session
     )
     return response
 
@@ -142,7 +120,6 @@ async def resend_verification_email(
 def get_reset_password(
     request: Request,
 ):
-
     return templates.TemplateResponse(
         "auth/reset-password.html",
         {"request": request},
@@ -152,15 +129,14 @@ def get_reset_password(
 @router.post("/reset-password")
 async def post_reset_password(
     request: Request,
-    bg_tasks: BackgroundTasks,
+    background_tasks: BackgroundTasks,
     email: str = Form(...),
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
-
-    user = await views.get_user_by_email(email, db)
+    user = await views.get_user_by_email(email, session)
     if user:
         await views.reset_password(
-            background_tasks=bg_tasks, request=request, email=email
+            request, background_tasks, email
         )
         return templates.TemplateResponse(
             "components/successful.html",
@@ -183,7 +159,6 @@ async def post_reset_password(
 def get_reset_password_confirm(
     request: Request,
 ):
-
     return templates.TemplateResponse(
         "auth/reset-password-confirm.html",
         {"request": request},
@@ -195,25 +170,27 @@ async def reset_password_confirm(
     request: Request,
     token: str,
     password: str = Form(...),
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
-
-    user_details = schemas.ResetPasswordDetails(password=password)
+    obj_in = schemas.ResetPasswordDetails(password=password)
 
     email = await auth.verify_reset_token(token)
-    user = await views.get_user_by_email(email, db)
+    user = await views.get_user_by_email(email, session)
 
     if user:
+        
         pswd = auth.hash_password(password)
 
-        existing_user = db.query(
-            models.User
-        ).filter(models.User.email == email)
+        obj_in.__dict__.update(password=pswd)
 
-        user_details.__dict__.update(password=pswd)
-        existing_user.update(user_details.__dict__)
-        db.commit()
-
+        query = (
+            sql_update(models.User)
+            .where(models.User.email == email)
+            .values(obj_in.model_dump())
+            .execution_options(synchronize_session="fetch")
+        )
+        await session.execute(query)
+        await session.commit()
 
         return templates.TemplateResponse(
             "components/successful.html",
@@ -222,7 +199,6 @@ async def reset_password_confirm(
                 "message": "password reset successful..!",
             },
         )
-
     return templates.TemplateResponse(
         "components/error.html",
         {
@@ -238,7 +214,6 @@ def get_user_profile(
     request: Request,
     current_user: Annotated[EmailStr, Depends(get_active_user)],
 ):
-
-    return templates.TemplateResponse("index.html",
-        {"request": request, "current_user": current_user}
+    return templates.TemplateResponse(
+        "index.html", {"request": request, "current_user": current_user}
     )

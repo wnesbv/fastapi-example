@@ -1,7 +1,9 @@
 
+from __future__ import annotations
+
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, TypeAdapter
 
 
 class UserBase(BaseModel):
@@ -30,7 +32,7 @@ class GetUser(UserBase):
     is_admin: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # ...
@@ -38,8 +40,17 @@ class UiUser(UserBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
+
+class InItem(BaseModel):
+    id: int
+    title: str
+    description: str
+    owner_item_id: int
+
+    class Config:
+        from_attributes = True
 
 # ...
 class IUser(UserBase):
@@ -47,13 +58,14 @@ class IUser(UserBase):
     email_verified: bool
     is_active: bool
     is_admin: bool
-    user_item: list["Item"] = []
-    user_cmt: list["Comment"] = []
-    user_like: list["Like"] = []
-    user_dislike: list["Dislike"] = []
+    user_item: list[int]
+    user_cmt: list[int]
+    user_like: list[int]
+    user_dislike: list[int]
+    in_user: list[InItem]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class User(UserBase):
@@ -62,13 +74,13 @@ class User(UserBase):
     email_verified: bool
     is_active: bool
     is_admin: bool
-    user_item: list["Item"] = []
-    user_cmt: list["Comment"] = []
-    user_like: list["Like"] = []
-    user_dislike: list["Dislike"] = []
+    user_item: list[int]
+    user_cmt: list[int]
+    user_like: list[int]
+    user_dislike: list[int]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 from item.schemas import Item
@@ -79,4 +91,3 @@ from vote.schemas import Like, Dislike
 UiUser.update_forward_refs()
 IUser.update_forward_refs()
 User.update_forward_refs()
-

@@ -1,12 +1,11 @@
-SQLAlchemy
 fastapi
 uvicorn
+sqlalchemy[asyncio]
+aiosqlite
 pyjwt
 passlib[bcrypt]
 psycopg2-binary
-alembic
 python-decouple
-python-slugify
 fastapi-mail
 python-multipart
 itsdangerous

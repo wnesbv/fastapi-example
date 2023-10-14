@@ -1,30 +1,38 @@
-
 from datetime import datetime
 
 from fastapi import BackgroundTasks, HTTPException, status, Request, Response
 
 from pydantic import EmailStr
-from sqlalchemy.orm import Session
+
+from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from models import models
 
 from config.settings import settings
 from config.mail import send_mail
-from models import models
-from user.schemas import UserCreate, UserRegister
+from user.schemas import UserCreate
 from .auth import auth
 from . import schemas
 
 
-async def get_user_by_email(email: str, db: Session):
-
-    user = db.query(models.User).filter(
-        models.User.email == email
-    ).first()
-
-    return user
+# ..
+async def get_user_by_email(email, session):
+    stmt = await session.execute(select(models.User).where(models.User.email == email))
+    result = stmt.scalars().first()
+    return result
 
 
-def generate_verification_email_link(request: Request, email):
+async def get_user_by_id(id, session):
+    stmt = await session.execute(select(models.User).where(models.User.id == id))
+    result = stmt.scalars().first()
+    return result
 
+
+# ..
+
+
+def generate_verification_email_link(request, email):
     email_token = auth.encode_verification_token(email)
     base_url = request.base_url
     verification_link = f"{base_url}verify-email?token={email_token}"
@@ -34,13 +42,10 @@ def generate_verification_email_link(request: Request, email):
 
 def send_verification_email(
     request: Request,
-    background_tasks: BackgroundTasks,
     email: EmailStr,
+    background_tasks: BackgroundTasks,
 ):
-
-    verification_link = generate_verification_email_link(
-        request, email=email
-    )
+    verification_link = generate_verification_email_link(request, email)
 
     email = schemas.EmailSchema(
         email=[email],
@@ -58,68 +63,53 @@ def send_verification_email(
     )
 
 
-# ...
-
-
 async def create_user(
     request: Request,
-    background_tasks: BackgroundTasks,
-    user: UserCreate,
+    obj_in: UserCreate,
     password: str,
-    db: Session,
+    background_tasks: BackgroundTasks,
+    session: AsyncSession,
 ):
-
-    old_user = await get_user_by_email(email=user.email, db=db)
+    old_user = await get_user_by_email(obj_in.email, session)
     if old_user:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, "User with this email already exists"
         )
-
     send_verification_email(
-        request=request,
-        background_tasks=background_tasks,
-        email=user.email,
+        request,
+        obj_in.email,
+        background_tasks,
     )
-
-    new = models.User(
-        **user.dict(), password=password
-    )
-    db.add(new)
-    db.commit()
-    db.refresh(new)
-
+    new = models.User(**obj_in.model_dump(), password=password)
+    session.add(new)
+    await session.commit()
     return new
 
 
-def api_create_user(
+async def api_create_user(
     request: Request,
-    background_tasks: BackgroundTasks,
     password: str,
     created_at: datetime,
     obj_in: UserCreate,
-    db: Session,
+    background_tasks: BackgroundTasks,
+    session: AsyncSession,
 ):
     print("useremail", obj_in.email)
-    user = db.query(models.User).filter(
-        models.User.email == obj_in.email
-    ).first()
+    user = await get_user_by_email(obj_in.email, session)
 
     if user:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, "User with this email already exists"
         )
 
-    new = models.User(
-        **obj_in.dict(), password=password, created_at=created_at
-    )
-    db.add(new)
-    db.commit()
-    db.refresh(new)
+    new = models.User(**obj_in.model_dump(), password=password, created_at=created_at)
+    session.add(new)
+    await session.commit()
 
     send_verification_email(
-        request=request,
-        background_tasks=background_tasks,
-        email=obj_in.email,
+        request,
+        obj_in.email,
+        background_tasks,
     )
 
     return new
@@ -129,36 +119,27 @@ async def login_user(
     request: Request,
     response: Response,
     background_tasks: BackgroundTasks,
-    user_details: schemas.LoginDetails,
-    db: Session,
+    obj_in: schemas.LoginDetails,
+    session: AsyncSession,
 ):
-
-    user = await get_user_by_email(email=user_details.email, db=db)
-    print("user_details", user_details.password)
-
+    user = await get_user_by_email(obj_in.email, session)
     if not user:
         raise HTTPException(
             status.HTTP_401_UNAUTHORIZED, "User with this email doesn't exist!"
         )
-
-    if not auth.verify_password(user_details.password, user.password):
-        raise HTTPException(
-            status.HTTP_401_UNAUTHORIZED, "Incorrect password!"
-        )
-
+    if not await auth.verify_password(obj_in.password, user.password):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Incorrect password!")
     if not user.email_verified:
-        send_verification_email(request, background_tasks, user_details.email)
+        send_verification_email(request, obj_in.email, background_tasks)
 
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Электронная почта не подтверждена. Проверьте свою почту, чтобы узнать, как пройти верификацию.",
         )
     # ...
-    access_token = auth.encode_token(user.email, user)
+    access_token = await auth.encode_token(user.email, user)
 
-    response.set_cookie(
-        "access_token", access_token, httponly=True
-    )
+    response.set_cookie("access_token", access_token, httponly=True)
 
     return schemas.Token(access_token=access_token, token_type="bearer")
 
@@ -168,11 +149,10 @@ async def login_user(
 
 async def account_verify_email(
     token: str,
-    db: Session,
+    session: AsyncSession,
 ):
-
     email = auth.verify_email(token)
-    user = await get_user_by_email(email, db)
+    user = await get_user_by_email(email, session)
     if not user:
         raise HTTPException(
             401, "Недействительный пользователь... Пожалуйста, создайте учетную запись"
@@ -184,18 +164,18 @@ async def account_verify_email(
         )
     user.email_verified = True
     user.is_active = True
-    db.commit()
+    session.commit()
 
     return True
 
 
 async def resend_verification_email(
     request: Request,
-    background_tasks: BackgroundTasks,
     email: str,
-    db: Session,
+    background_tasks: BackgroundTasks,
+    session: AsyncSession,
 ):
-    user = await get_user_by_email(email, db)
+    user = await get_user_by_email(email, session)
 
     if not user:
         raise HTTPException(
@@ -204,10 +184,9 @@ async def resend_verification_email(
     if user.email_verified:
         raise HTTPException(400, "Электронная почта уже проверена!")
 
-    send_verification_email(request, background_tasks, email)
+    send_verification_email(request, email, background_tasks)
 
     return {"msg": "Письмо с подтверждением отправлено повторно!"}
-
 
 
 async def reset_password(
@@ -215,7 +194,6 @@ async def reset_password(
     background_tasks: BackgroundTasks,
     email: str,
 ):
-
     token = auth.encode_reset_token(email)
 
     email = schemas.EmailSchema(

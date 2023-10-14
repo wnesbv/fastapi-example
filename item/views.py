@@ -1,7 +1,11 @@
 import os
 from datetime import datetime
-
 from pathlib import Path, PurePosixPath
+
+from sqlalchemy import update as sql_update
+from sqlalchemy import func, and_, or_, not_, true, false
+from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi import (
     HTTPException,
@@ -9,29 +13,32 @@ from fastapi import (
     status,
 )
 
-from sqlalchemy.orm import Session
-from sqlalchemy.future import select
-
 from models import models
 from item import schemas
+from user import views
+
+
+async def all_total(session, model):
+    stmt = await session.execute(select(func.count(model.id)))
+    result = stmt.scalars().all()
+    return result
 
 
 async def create_not_img_item(
     owner_item_id: int,
     created_at: datetime,
     obj_in: schemas.ItemBase,
-    db: Session,
+    session: AsyncSession,
 ):
 
     new = models.Item(
-        **obj_in.dict(),
+        **obj_in.model_dump(),
         owner_item_id=owner_item_id,
         created_at=created_at,
     )
 
-    db.add(new)
-    db.commit()
-    db.refresh(new)
+    session.add(new)
+    await session.commit()
 
     return new
 
@@ -41,19 +48,18 @@ async def create_new_item(
     owner_item_id: int,
     created_at: datetime,
     obj_in: schemas.ItemCreate,
-    db: Session,
+    session: AsyncSession,
 ):
 
     new = models.Item(
-        **obj_in.dict(),
+        **obj_in.model_dump(exclude={"image_url"}),
         image_url=image_url,
         owner_item_id=owner_item_id,
         created_at=created_at,
     )
 
-    db.add(new)
-    db.commit()
-    db.refresh(new)
+    session.add(new)
+    await session.commit()
 
     return new
 
@@ -65,18 +71,17 @@ async def api_not_img_item(
     owner_item_id: int,
     created_at: datetime,
     obj_in: schemas.ItemBase,
-        db: Session,
+    session: AsyncSession,
 ):
 
     new = models.Item(
-        **obj_in.dict(),
+        **obj_in.model_dump(),
         owner_item_id=owner_item_id,
         created_at=created_at,
     )
 
-    db.add(new)
-    db.commit()
-    db.refresh(new)
+    session.add(new)
+    await session.commit()
 
     return new
 
@@ -86,10 +91,10 @@ async def api_new_item(
     owner_item_id: int,
     created_at: datetime,
     obj_in: schemas.ItemCreate,
-    db: Session,
+    session: AsyncSession,
 ):
 
-    img = obj_in.dict()
+    img = obj_in.model_dump()
     del img["image_url"]
     new = models.Item(
         **img,
@@ -98,9 +103,8 @@ async def api_new_item(
         created_at=created_at
     )
 
-    db.add(new)
-    db.commit()
-    db.refresh(new)
+    session.add(new)
+    await session.commit()
 
     return new
 
@@ -110,23 +114,23 @@ async def api_new_item(
 
 async def img_del(
     id: int,
-    image_url: str,
     modified_at: datetime,
     obj_in: schemas.ImgDel,
-    db: Session,
+    session: AsyncSession,
 ):
-    existing_item = db.query(
-        models.Item
-    ).filter(models.Item.id == id)
-
     obj_in.__dict__.update(
-        image_url=image_url,
         modified_at=modified_at,
     )
-    existing_item.update(obj_in.__dict__)
-    db.commit()
+    query = (
+        sql_update(models.Item)
+        .where(models.Item.id == id)
+        .values(image_url="",modified_at=modified_at)
+        .execution_options(synchronize_session="fetch")
+    )
+    await session.execute(query)
+    await session.commit()
 
-    return existing_item
+    return query
 
 
 # ...update
@@ -136,20 +140,22 @@ async def update_item(
     id: int,
     modified_at: datetime,
     obj_in: schemas.ItemBase,
-    db: Session,
+    session: AsyncSession,
 ):
-
-    existing_item = db.query(
-        models.Item
-    ).filter(models.Item.id == id)
 
     obj_in.__dict__.update(
         modified_at=modified_at,
     )
-    existing_item.update(obj_in.__dict__)
-    db.commit()
+    query = (
+        sql_update(models.Item)
+        .where(models.Item.id == id)
+        .values(obj_in.model_dump())
+        .execution_options(synchronize_session="fetch")
+    )
+    await session.execute(query)
+    await session.commit()
 
-    return existing_item
+    return query
 
 
 async def img_update_item(
@@ -157,20 +163,23 @@ async def img_update_item(
     image_url: str,
     modified_at: datetime,
     obj_in: schemas.ItemCreate,
-    db: Session,
+    session: AsyncSession,
 ):
-    existing_item = db.query(
-        models.Item
-    ).filter(models.Item.id == id)
 
     obj_in.__dict__.update(
         image_url=image_url,
         modified_at=modified_at,
     )
-    existing_item.update(obj_in.__dict__)
-    db.commit()
+    query = (
+        sql_update(models.Item)
+        .where(models.Item.id == id)
+        .values(obj_in.model_dump())
+        .execution_options(synchronize_session="fetch")
+    )
+    await session.execute(query)
+    await session.commit()
 
-    return existing_item
+    return query
 
 
 # ...api update
@@ -182,21 +191,24 @@ async def api_str_item(
     description: str,
     modified_at: datetime,
     obj_in: schemas.ItemUpdate,
-    db: Session,
+    session: AsyncSession,
 ):
-    existing_item = db.query(
-        models.Item
-    ).filter(models.Item.id == id)
 
     obj_in.__dict__.update(
         title=title,
         description=description,
         modified_at=modified_at,
     )
-    existing_item.update(obj_in.__dict__)
-    db.commit()
+    query = (
+        sql_update(models.Item)
+        .where(models.Item.id == id)
+        .values(obj_in.model_dump())
+        .execution_options(synchronize_session="fetch")
+    )
+    await session.execute(query)
+    await session.commit()
 
-    return existing_item
+    return query
 
 
 async def api_update_item(
@@ -206,11 +218,8 @@ async def api_update_item(
     image_url: str,
     modified_at: datetime,
     obj_in: schemas.ItemUpdate,
-    db: Session,
+    session: AsyncSession,
 ):
-    existing_item = db.query(
-        models.Item
-    ).filter(models.Item.id == id)
 
     obj_in.__dict__.update(
         title=title,
@@ -218,10 +227,16 @@ async def api_update_item(
         image_url=image_url,
         modified_at=modified_at,
     )
-    existing_item.update(obj_in.__dict__)
-    db.commit()
+    query = (
+        sql_update(models.Item)
+        .where(models.Item.id == id)
+        .values(obj_in.model_dump())
+        .execution_options(synchronize_session="fetch")
+    )
+    await session.execute(query)
+    await session.commit()
 
-    return existing_item
+    return query
 
 
 async def api_img_item(
@@ -231,11 +246,8 @@ async def api_img_item(
     image_url: str,
     modified_at: datetime,
     obj_in: schemas.ItemCreate,
-    db: Session,
+    session: AsyncSession,
 ):
-    existing_item = db.query(
-        models.Item
-    ).filter(models.Item.id == id)
 
     obj_in.__dict__.update(
         title=title,
@@ -243,23 +255,57 @@ async def api_img_item(
         image_url=image_url,
         modified_at=modified_at,
     )
-    existing_item.update(obj_in.__dict__)
-    db.commit()
+    query = (
+        sql_update(models.Item)
+        .where(models.Item.id == id)
+        .values(obj_in.model_dump())
+        .execution_options(synchronize_session="fetch")
+    )
+    await session.execute(query)
+    await session.commit()
 
-    return existing_item
+    return query
 
 
 # ...delete
 
+async def item_owner(
+    id: int,
+    user: int,
+    session: AsyncSession,
+):
+
+    stmt = await session.execute(
+        select(models.Item).where(
+            and_(
+                models.Item.id == id,
+                models.Item.owner_item_id == user,
+            )
+        )
+    )
+    result = stmt.scalars().first()
+
+    return result
+
 
 async def item_delete(
     id: int,
-    db: Session,
+    user: int,
+    session: AsyncSession,
 ):
-    db.query(
-        models.Item
-    ).filter(models.Item.id == id).delete()
-    db.commit()
+
+    stmt = await session.execute(
+        select(models.Item).where(
+            and_(
+                models.Item.id == id,
+                models.Item.owner_item_id == user,
+            )
+        )
+    )
+    result = stmt.scalars().first()
+
+    await session.delete(result)
+    await session.commit()
 
     return True
 
@@ -269,35 +315,13 @@ async def item_delete(
 
 async def retreive_item(
     id: int,
-    db: Session
+    session: AsyncSession
 ):
 
-    stmt = db.execute(
+    stmt = await session.execute(
         select(models.Item).where(models.Item.id == id)
     )
     result = stmt.scalars().first()
-
-    return result
-
-
-def list_item(db: Session):
-
-    obj_list = db.execute(select(models.Item)).scalars().all()
-
-    return obj_list
-
-
-def list_user_item(
-    owner_item_id: int,
-    db: Session,
-):
-
-    stmt = db.execute(
-        select(models.Item)
-        .where(models.Item.owner_item_id == owner_item_id)
-    )
-    result = stmt.scalars().all()
-
 
     return result
 
@@ -336,10 +360,11 @@ async def img_creat(
 # ...
 
 
-def search_item(query: str, db: Session):
+async def search_item(query: str, session: AsyncSession):
 
-    obj_list = db.query(
-        models.Item
-    ).filter(models.Item.title.contains(query))
+    stmt =  await session.execute(
+        select(models.Item).where(models.Item.title.contains(query))
+    )
+    obj_list = stmt.scalars().all()
 
     return obj_list

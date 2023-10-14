@@ -16,12 +16,12 @@ class Auth:
         hashed = bcrypt.hashpw(password.encode(), salt)
         return hashed
 
-    def verify_password(self, password, encoded_password):
+    async def verify_password(self, password, encoded_password):
         verify = bcrypt.checkpw(password.encode(), encoded_password)
         return verify
 
 
-    def encode_token(self, username, user):
+    async def encode_token(self, username, user):
 
         payload = {
             "user_id": user.id,
@@ -35,14 +35,23 @@ class Auth:
         )
 
 
-    def decode_token(self, token):
+    async def decode_token(self, token):
 
         payload = jwt.decode(
             token, self.secret, algorithms=settings.ALGORITHM
         )
-
         if payload["scope"] == "access_token":
             return payload["sub"]
+        return False
+
+
+    async def decode_token_all(self, token):
+
+        payload = jwt.decode(
+            token, self.secret, algorithms=settings.ALGORITHM
+        )
+        if payload["scope"] == "access_token":
+            return payload
         return False
 
 

@@ -13,14 +13,14 @@ from fastapi import (
 )
 
 from pydantic import EmailStr
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from models import models
 from account import schemas, views
 from user import schemas as user_schemas
 from account.auth import auth
-from config.dependency import get_db
+from config.dependency import get_session
 from user.views import get_active_user
 
 
@@ -28,25 +28,25 @@ router = APIRouter(prefix="/docs", tags=["Authentication"])
 
 
 @router.post("/register", response_model=user_schemas.UserRegister)
-def register_user(
+async def register_user(
     request: Request,
     background_tasks: BackgroundTasks,
     email: EmailStr = Form(...),
     password: str = Form(...),
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
 
     user = user_schemas.UserRegister(
         email=email
     )
 
-    views.api_create_user(
+    await views.api_create_user(
         request=request,
         background_tasks=background_tasks,
         password=auth.hash_password(password),
         created_at=datetime.now(),
         obj_in=user,
-        db=db,
+        session=session,
     )
     return user
 
@@ -58,18 +58,18 @@ async def login(
     response: Response,
     background_tasks: BackgroundTasks,
     user_details: schemas.LoginDetails,
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 
 ):
-    token = await views.login_user(request, response, background_tasks, user_details, db)
+    token = await views.login_user(request, response, background_tasks, user_details, session)
 
     return token
 
 
 @router.get("/email-verify")
-def api_verify_email(token: str, db: Session = Depends(get_db)):
+def api_verify_email(token: str, session: AsyncSession = Depends(get_session)):
 
-    response = views.verify_email(token, db)
+    response = views.verify_email(token, session)
 
     return response
 
@@ -79,10 +79,10 @@ async def resend_email(
     requests: Request,
     background_tasks: BackgroundTasks,
     email: EmailStr,
-    db: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
 
-    response = await views.resend_verification_email(requests, background_tasks, email, db)
+    response = await views.resend_verification_email(requests, background_tasks, email, session)
 
     return response
 

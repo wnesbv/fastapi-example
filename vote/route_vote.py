@@ -2,14 +2,13 @@
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, Form, responses, status
+from fastapi import APIRouter, Depends, Request, responses, status
 from fastapi.templating import Jinja2Templates
 
-from pydantic import EmailStr
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from config.dependency import get_db
-from user.views import get_active_user
+from config.dependency import get_session
+from user.views import access_user_id
 
 from . import schemas, views
 
@@ -19,18 +18,14 @@ router = APIRouter(include_in_schema=False)
 
 
 @router.get("/like/{id}")
-def get_like_create(
+async def get_like_create(
     id: str,
     request: Request,
-    current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    current_user: Annotated[int, Depends(access_user_id)],
+    session: AsyncSession = Depends(get_session),
 ):
-    like_user_id=current_user.id
-    if not views.retreive_like(
-        current_user=like_user_id,
-        id=id,
-        db=db,
-    ):
+
+    if not await views.retreive_like(id, current_user.id, session):
 
         return templates.TemplateResponse(
             "item/like.html",
@@ -49,22 +44,17 @@ def get_like_create(
 @router.post("/like/{id}")
 async def like_create(
     id: int,
-    current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    current_user: Annotated[int, Depends(access_user_id)],
     upvote: bool = True,
     created_at: datetime = datetime.now(),
+    session: AsyncSession = Depends(get_session),
 ):
 
-    i = schemas.LikeChoose(
+    obj_in = schemas.LikeChoose(
         upvote=upvote, created_at=created_at
     )
 
-    await views.like_add(
-        db=db,
-        like_in=i,
-        like_item_id=id,
-        like_user_id=current_user.id,
-    )
+    await views.like_add(id, current_user.id, obj_in, session)
 
     return responses.RedirectResponse(
         f"/item-detail/{ id }", status_code=status.HTTP_302_FOUND
@@ -72,21 +62,17 @@ async def like_create(
 
 
 # ...
-
-
 @router.get("/dislike/{id}/")
-def get_dislike_create(
+async def get_dislike_create(
     id: str,
     request: Request,
-    current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    current_user: Annotated[int, Depends(access_user_id)],
+    session: AsyncSession = Depends(get_session),
 ):
-    dislike_user_id = current_user.id
-    if not views.retreive_dislike(
-        current_user=dislike_user_id,
-        id=id,
-        db=db
-    ):
+
+    like = await views.retreive_dislike(id, current_user.id, session
+    )
+    if not like:
 
         return templates.TemplateResponse(
             "item/dislike.html",
@@ -105,22 +91,17 @@ def get_dislike_create(
 @router.post("/dislike/{id}/")
 async def dislike_create(
     id: str,
-    current_user: Annotated[EmailStr, Depends(get_active_user)],
-    db: Session = Depends(get_db),
+    current_user: Annotated[int, Depends(access_user_id)],
+    session: AsyncSession = Depends(get_session),
     downvote: bool = False,
     created_at: datetime = datetime.now(),
 ):
 
-    i = schemas.DislikeChoose(
+    obj_in = schemas.DislikeChoose(
         downvote=downvote, created_at=created_at
     )
 
-    await views.dislike_add(
-        db=db,
-        dislike_in=i,
-        dislike_item_id=id,
-        dislike_user_id=current_user.id
-    )
+    await views.dislike_add(id, current_user.id, obj_in, session)
 
     return responses.RedirectResponse(
         f"/item-detail/{ id }",

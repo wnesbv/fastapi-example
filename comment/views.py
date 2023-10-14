@@ -1,86 +1,73 @@
 
 from datetime import datetime
 
-from sqlalchemy.orm import Session
+from sqlalchemy import update as sql_update
+from sqlalchemy import func, and_, or_, not_, true, false
+from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import models
 from . import schemas
 
 
 async def comment_create(
-    obj_in: schemas.CmtCreate,
-    db: Session,
     cmt_user_id: int,
     cmt_item_id: int,
+    obj_in: schemas.CmtCreate,
+    session: AsyncSession,
 ):
 
     new = models.Comment(
-        **obj_in.dict(),
+        **obj_in.model_dump(),
         cmt_user_id=cmt_user_id,
         cmt_item_id=cmt_item_id,
     )
 
-    db.add(new)
-    db.commit()
-    db.refresh(new)
+    session.add(new)
+    await session.commit()
 
     return new
 
 
 async def up_comment(
     id: int,
-    cmt: schemas.CmtUpdate,
-    db: Session,
     modified_at: datetime,
+    obj_in: schemas.CmtUpdate,
+    session: AsyncSession,
 ):
-    existing_cmt = db.query(
-        models.Comment
-    ).filter(models.Comment.id == id)
 
-    cmt.__dict__.update(
+    obj_in.__dict__.update(
         modified_at=modified_at
     )
-    existing_cmt.update(cmt.__dict__)
-    db.commit()
+    query = (
+        sql_update(models.Comment)
+        .where(models.Comment.id == id)
+        .values(obj_in.model_dump())
+        .execution_options(synchronize_session="fetch")
+    )
+    await session.execute(query)
+    await session.commit()
 
-    return existing_cmt
+    return query
 
 
 async def comment_delete(
     id: int,
-    db: Session,
+    user: int,
+    session: AsyncSession,
 ):
 
-    existing_cmt = db.query(
-        models.Comment
-    ).filter(models.Comment.id == id)
+    stmt = await session.execute(
+        select(models.Comment).where(
+            and_(
+                models.Comment.id == id,
+                models.Comment.cmt_user_id == user,
+            )
+        )
+    )
+    result = stmt.scalars().first()
 
-    if not existing_cmt.first():
-        return False
+    result.delete(synchronize_session=False)
+    await session.commit()
 
-    existing_cmt.delete(synchronize_session=False)
-    db.commit()
-
-    return existing_cmt
-
-
-# ...
-
-
-def retreive_cmt(
-    id: int,
-    db: Session
-):
-
-    obj = db.query(
-        models.Comment
-    ).filter(models.Comment.id == id).first()
-
-    return obj
-
-
-def list_cmt(db: Session):
-
-    obj_list = db.query(models.Comment).all()
-
-    return obj_list
+    return result
