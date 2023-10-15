@@ -7,12 +7,10 @@ from pydantic import EmailStr
 
 from sqlalchemy import delete
 from fastapi import (
-    HTTPException,
     APIRouter,
     Depends,
     Request,
     responses,
-    Form,
     File,
     UploadFile,
     status,
@@ -23,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from user.views import get_active_user
 from config.dependency import get_session
-from options_select.opt import in_all, left_right_first, left_right_all
+from options_select.opt import left_right_all
 
 from models import models
 
@@ -46,11 +44,11 @@ async def export_csv(
         session, models.Item, models.Item.owner_item_id, current_user.id
     )
 
-    file_time = datetime.now()
-    directory = BASE_DIR / f"static/csv/{file_time.strftime('%Y-%m-%d-%H-%M-%S')}.csv"
-    filename = f"{file_time.strftime('%Y-%m-%d-%H-%M-%S')}.csv"
+    directory = BASE_DIR / f"static/csv/{current_user.email}"
+    os.makedirs(directory, exist_ok=True)
+    filename = "export_csv.csv"
 
-    with open(directory, "w", encoding="utf-8") as csvfile:
+    with open(f"{directory}/{filename}", "w", encoding="utf-8") as csvfile:
         spamwriter = csv.writer(csvfile)
         spamwriter.writerow(
             [
@@ -77,7 +75,7 @@ async def export_csv(
             )
 
         return responses.RedirectResponse(
-            f"/static/csv/{filename}", status_code=status.HTTP_302_FOUND
+            f"/static/csv/{current_user.email}/{filename}", status_code=status.HTTP_302_FOUND
         )
 
 
