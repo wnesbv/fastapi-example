@@ -1,7 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated
-import os, csv
+import os, csv, io
 import tempfile
 from pydantic import EmailStr
 
@@ -16,6 +16,7 @@ from fastapi import (
     status,
 )
 from fastapi.templating import Jinja2Templates
+from starlette.responses import Response
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -44,39 +45,80 @@ async def export_csv(
         session, models.Item, models.Item.owner_item_id, current_user.id
     )
 
-    directory = BASE_DIR / f"static/csv/{current_user.email}"
-    os.makedirs(directory, exist_ok=True)
-    filename = "export_csv.csv"
-
-    with open(f"{directory}/{filename}", "w", encoding="utf-8") as csvfile:
-        spamwriter = csv.writer(csvfile)
+    output = io.StringIO()
+    spamwriter = csv.writer(output)
+    spamwriter.writerow(
+        [
+            "id",
+            "title",
+            "description",
+            "image_url",
+            "created_at",
+            "modified_at",
+            "owner_item_id",
+        ]
+    )
+    for i in detal:
         spamwriter.writerow(
             [
-                "id",
-                "title",
-                "description",
-                "image_url",
-                "created_at",
-                "modified_at",
-                "owner_item_id",
+                i.id,
+                i.title,
+                i.description,
+                i.image_url,
+                i.created_at,
+                i.modified_at,
+                i.owner_item_id,
             ]
         )
-        for i in detal:
-            spamwriter.writerow(
-                [
-                    i.id,
-                    i.title,
-                    i.description,
-                    i.image_url,
-                    i.created_at,
-                    i.modified_at,
-                    i.owner_item_id,
-                ]
-            )
 
-        return responses.RedirectResponse(
-            f"/static/csv/{current_user.email}/{filename}", status_code=status.HTTP_302_FOUND
-        )
+    content = output.getvalue()
+    headers = {"Content-Disposition": f"attachment;filename=or_{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}.csv"}
+    return Response(content, headers=headers)
+
+
+# @router.get("/dump-item")
+# async def export_csv(
+#     current_user: Annotated[EmailStr, Depends(get_active_user)],
+#     session: AsyncSession = Depends(get_session),
+# ):
+
+#     detal = await left_right_all(
+#         session, models.Item, models.Item.owner_item_id, current_user.id
+#     )
+
+#     directory = BASE_DIR / f"static/csv/{current_user.email}"
+#     os.makedirs(directory, exist_ok=True)
+#     filename = "export_csv.csv"
+
+#     with open(f"{directory}/{filename}", "w", encoding="utf-8") as csvfile:
+#         spamwriter = csv.writer(csvfile)
+#         spamwriter.writerow(
+#             [
+#                 "id",
+#                 "title",
+#                 "description",
+#                 "image_url",
+#                 "created_at",
+#                 "modified_at",
+#                 "owner_item_id",
+#             ]
+#         )
+#         for i in detal:
+#             spamwriter.writerow(
+#                 [
+#                     i.id,
+#                     i.title,
+#                     i.description,
+#                     i.image_url,
+#                     i.created_at,
+#                     i.modified_at,
+#                     i.owner_item_id,
+#                 ]
+#             )
+
+#         return responses.RedirectResponse(
+#             f"/static/csv/{current_user.email}/{filename}", status_code=status.HTTP_302_FOUND
+#         )
 
 
 # ...import

@@ -8,4 +8,3 @@ psycopg2-binary
 python-decouple
 fastapi-mail
 python-multipart
-itsdangerous
