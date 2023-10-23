@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 #from config.db import on_app_startup
 # ..
 
+from routes.urls import routes
 from account import route_auth
 from comment import route_comment
 from item import route_item
@@ -21,9 +22,11 @@ from dump_csv import router_csv
 
 app = FastAPI(
     # ..
-    #on_startup=[on_app_startup]
+    #on_startup=[on_app_startup],
     # ..
+    routes=routes
 )
+
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 

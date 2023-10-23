@@ -4,6 +4,7 @@ from fastapi import BackgroundTasks, HTTPException, status, Request, Response
 
 from pydantic import EmailStr
 
+from sqlalchemy import false, and_
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -122,7 +123,16 @@ async def login_user(
     obj_in: schemas.LoginDetails,
     session: AsyncSession,
 ):
-    user = await get_user_by_email(obj_in.email, session)
+    stmt = await session.execute(
+        select(models.User)
+        .where(
+            and_(
+                models.User.email == obj_in.email,
+                models.User.privileged == false()
+            )
+        )
+    )
+    user = stmt.scalars().first()
     if not user:
         raise HTTPException(
             status.HTTP_401_UNAUTHORIZED, "User with this email doesn't exist!"
@@ -140,6 +150,7 @@ async def login_user(
     access_token = await auth.encode_token(user.email, user)
 
     response.set_cookie("access_token", access_token, httponly=True)
+    response.set_cookie("access_user", user.email, httponly=True)
 
     return schemas.Token(access_token=access_token, token_type="bearer")
 

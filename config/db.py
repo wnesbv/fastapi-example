@@ -1,10 +1,18 @@
 from datetime import datetime, timedelta
 
-import bcrypt, time
+import bcrypt, time, string, secrets
+
+from passlib.hash import pbkdf2_sha1
 
 from models.reserverent import ReserveRentFor
-from models.models import User, Item, Comment, Like, Dislike
-from config.storage_config import Base, engine, async_session
+from models.models import User, Privileged, Item, Comment, Like, Dislike
+from .storage_config import Base, engine, async_session
+
+
+def get_random_string():
+    alphabet = string.ascii_letters + string.digits
+    prv_key = "".join(secrets.choice(alphabet) for i in range(32))
+    return prv_key
 
 
 async def on_app_startup() -> None:
@@ -21,8 +29,11 @@ async def on_app_startup() -> None:
     async with async_session() as session:
         async with session.begin():
             # ..
+            passlib_hash = pbkdf2_sha1.hash("password")
+            # ..
+            # ..
             salt = bcrypt.gensalt()
-            password_hash = bcrypt.hashpw(("password").encode(), salt)
+            bcrypt_hash = bcrypt.hashpw(("password").encode(), salt)
             # ..
             start = time.time()
             print(" start all..")
@@ -32,7 +43,8 @@ async def on_app_startup() -> None:
                     User(
                         name="one",
                         email="one@example.com",
-                        password=password_hash,
+                        password=passlib_hash,
+                        privileged=True,
                         is_admin=True,
                         is_active=True,
                         email_verified=True,
@@ -41,11 +53,16 @@ async def on_app_startup() -> None:
                     User(
                         name="two",
                         email="two@example.com",
-                        password=password_hash,
+                        password=bcrypt_hash,
+                        privileged=False,
                         is_admin=False,
                         is_active=True,
                         email_verified=True,
                         created_at=datetime.now()
+                    ),
+                    Privileged(
+                        prv_key=get_random_string(),
+                        prv_in=1,
                     ),
                     Item(
                         title="item 01 one",

@@ -10,7 +10,7 @@ from sqlalchemy import String, DateTime, ForeignKey
 from sqlalchemy.ext.asyncio import AsyncAttrs, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, mapped_column
 
-from config.settings import settings
+from .settings import settings
 
 
 if settings.USE_SQLITE_DB == "True":

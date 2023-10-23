@@ -24,6 +24,7 @@ class User(Base):
     password: Mapped[str] = mapped_column(String, nullable=False)
     # ...
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    privileged: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     # ...
@@ -46,6 +47,18 @@ class User(Base):
 
     def __str__(self):
         return str(self.name)
+
+
+class Privileged(Base):
+    __tablename__ = "privileged"
+
+    id: Mapped[intpk]
+    prv_key: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    prv_in: Mapped[str] = mapped_column(Text, nullable=True)
+
+    # ...
+    def __str__(self):
+        return str(self.prv_key)
 
 
 class Item(Base):

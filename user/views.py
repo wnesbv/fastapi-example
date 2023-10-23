@@ -1,10 +1,12 @@
 
 import jwt, functools
-from fastapi import Request, Depends, HTTPException, status
+from fastapi import Request, Depends, HTTPException, status, responses
 
 from sqlalchemy import update as sql_update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+
+from config.storage_config import engine, async_session
 
 from user import schemas
 from models import models
@@ -38,6 +40,20 @@ async def access_user_id(request: Request, session: AsyncSession = Depends(get_s
         result = await get_user_by_id(user.id, session)
         return result
 # ..
+
+
+def access_token():
+    def decorator(func):
+        @functools.wraps(func)
+        async def wrapper(request, *a, **ka):
+            async with async_session() as session:
+                user = await access_user_id(request, session)
+            await engine.dispose()
+            if user:
+                return await func(request, *a, **ka)
+            return responses.RedirectResponse("/login")
+        return wrapper
+    return decorator
 
 
 # ..

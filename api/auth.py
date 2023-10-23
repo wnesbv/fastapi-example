@@ -14,14 +14,13 @@ from fastapi import (
 
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 
-from models import models
-from account import schemas, views
 from user import schemas as user_schemas
+
+from account import schemas, views
 from account.auth import auth
+
 from config.dependency import get_session
-from user.views import get_active_user
 
 
 router = APIRouter(prefix="/docs", tags=["Authentication"])
@@ -53,15 +52,14 @@ async def register_user(
 
 @router.post("/login", response_model=schemas.Token)
 async def login(
-    *,
     request: Request,
     response: Response,
     background_tasks: BackgroundTasks,
-    user_details: schemas.LoginDetails,
+    obj_in: schemas.LoginDetails,
     session: AsyncSession = Depends(get_session),
 
 ):
-    token = await views.login_user(request, response, background_tasks, user_details, session)
+    token = await views.login_user(request, response, background_tasks, obj_in, session)
 
     return token
 

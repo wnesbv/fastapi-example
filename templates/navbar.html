@@ -96,18 +96,48 @@
                         data-bs-toggle="dropdown"
                         aria-expanded="false"
                     >
-                        Account
+                        account
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <li>
-                            <a class="dropdown-item" href="/register">Signup</a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="/login">Login</a>
-                        </li>
-                        <li>
-                            <hr class="dropdown-divider" />
-                        </li>
+
+                    <li>
+                    <span class="dropdown-item">
+
+                    {% if request.cookies["access_user"] %}
+                    <i class="bi bi-person-check"></i>
+                    <sup>{{ request.cookies["access_user"] }}</sup>
+                    {% endif %}
+
+                    {% if request.cookies["prv_user"] %}
+                    <sup>{{ request.cookies["prv_user"] }}</sup>
+                    {% endif %}
+
+                    </span>
+                    </li>
+
+
+
+                    <li>
+                        <hr class="dropdown-divider" />
+                    </li>
+
+                    <li>
+                        <a class="dropdown-item" href="/register">Signup</a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="/login">user login</a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="/privileged/login">prv login</a>
+                    </li>
+
+                    <li>
+                        <hr class="dropdown-divider" />
+                    </li>
+
+                    <li>
+                        <a class="dropdown-item" href="/privileged/logout">prv logout</a>
+                    </li>
 
                     </ul>
                 </li>

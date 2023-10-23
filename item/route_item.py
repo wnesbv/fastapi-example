@@ -1,8 +1,8 @@
-from datetime import datetime
+
 from pathlib import Path
+from datetime import datetime
 from typing import Annotated
 
-from sqlalchemy import func, and_, or_, not_, true, false
 from sqlalchemy.future import select
 
 from fastapi import (
@@ -73,19 +73,31 @@ async def create_item(
         # )
 
     if image_url.filename == "" or category == "":
+
         obj_in = schemas.ItemBase(title=title, description=description)
+
         obj = await views.create_not_img_item(
             current_user.id,
             created_at,
             obj_in,
             session,
         )
-        return responses.RedirectResponse(
-            f"/item-detail/{ obj.id }/?msg=sucesso..!",
+        response = responses.RedirectResponse(
+            f"/item-detail/{ obj.id }",
             status_code=status.HTTP_302_FOUND,
         )
+        response.set_cookie(
+            key="message",
+            value="sucesso..!",
+            path=(f"/item-detail/{ obj.id }"),
+            max_age=int(10),
+            httponly=True,
+        )
+        return response
     # ..
-    obj_in = schemas.ItemCreate(title=title, description=description, image_url=image_url)
+    obj_in = schemas.ItemCreate(
+        title=title, description=description, image_url=image_url
+    )
 
     upload = await views.img_creat(category, image_url)
     obj_img = await views.create_new_item(
@@ -99,6 +111,69 @@ async def create_item(
     return responses.RedirectResponse(
         f"/item-detail/{ obj_img.id }/?msg=sucesso..!",
         status_code=status.HTTP_302_FOUND,
+    )
+
+
+# ...detail
+
+
+@router.get("/item-detail/{id}")
+async def item_detail(
+    id: int,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    # ..
+    obj = await left_right_first(session, models.Item, models.Item.id, id)
+
+    # ..
+    cmt_list = await left_right_all(
+        session, models.Comment, models.Comment.cmt_item_id, id
+    )
+    # ..
+    stmt = await session.execute(
+        select(models.Like.like_item_id).where(models.Like.like_item_id == id)
+    )
+    obj_like = stmt.scalars().all()
+    # ..
+    total_like = len(list(obj_like))
+
+    # ...
+    stmt = await session.execute(
+        select(models.Dislike.dislike_item_id).where(
+            models.Dislike.dislike_item_id == id
+        )
+    )
+    obj_dislike = stmt.scalars().all()
+    # ..
+    total_dislike = len(list(obj_dislike))
+
+    # ...
+    msg = ""
+    if "msg" in request.query_params:
+        msg = request.query_params["msg"]
+
+        return templates.TemplateResponse(
+            "item/detail.html",
+            {
+                "request": request,
+                "msg": msg,
+                "obj": obj,
+                "cmt_list": cmt_list,
+                "total_like": total_like,
+                "total_dislike": total_dislike,
+            },
+        )
+
+    return templates.TemplateResponse(
+        "item/detail.html",
+        {
+            "request": request,
+            "obj": obj,
+            "cmt_list": cmt_list,
+            "total_like": total_like,
+            "total_dislike": total_dislike,
+        },
     )
 
 
@@ -193,9 +268,7 @@ async def list_item_delete(
     current_user: Annotated[int, Depends(access_user_id)],
     session: AsyncSession = Depends(get_session),
 ):
-
     if current_user:
-
         obj_list = await left_right_all(
             session, models.Item, models.Item.owner_item_id, current_user.id
         )
@@ -212,7 +285,6 @@ async def get_delete(
     current_user: Annotated[int, Depends(access_user_id)],
     session: AsyncSession = Depends(get_session),
 ):
-
     if current_user:
         obj = await views.item_owner(id, current_user.id, session)
 
@@ -228,7 +300,6 @@ async def delete_item(
     current_user: Annotated[int, Depends(access_user_id)],
     session: AsyncSession = Depends(get_session),
 ):
-
     obj = await views.item_owner(id, current_user.id, session)
 
     if obj.owner_item_id == current_user.id or current_user.is_admin:
@@ -251,7 +322,6 @@ async def item_list(
     msg: str = None,
     session: AsyncSession = Depends(get_session),
 ):
-
     obj_list = await in_all(session, models.Item)
 
     return templates.TemplateResponse(
@@ -266,74 +336,10 @@ async def user_item_list(
     msg: str = None,
     session: AsyncSession = Depends(get_session),
 ):
-
     obj_list = await left_right_all(
         session, models.Item, models.Item.owner_item_id, current_user.id
     )
 
     return templates.TemplateResponse(
         "item/list.html", {"request": request, "obj_list": obj_list, "msg": msg}
-    )
-
-
-# ...detail
-
-
-@router.get("/item-detail/{id}")
-async def item_detail(
-    id: int,
-    request: Request,
-    session: AsyncSession = Depends(get_session),
-):
-    # ..
-    obj = await left_right_first(session, models.Item, models.Item.id, id)
-
-    # ..
-    cmt_list = await left_right_all(
-        session, models.Comment, models.Comment.cmt_item_id, id
-    )
-    # ..
-    stmt = await session.execute(
-        select(models.Like.like_item_id).where(models.Like.like_item_id == id)
-    )
-    obj_like = stmt.scalars().all()
-    # ..
-    total_like = len(list(obj_like))
-
-    # ...
-    stmt = await session.execute(
-        select(models.Dislike.dislike_item_id).where(
-            models.Dislike.dislike_item_id == id
-        )
-    )
-    obj_dislike = stmt.scalars().all()
-    # ..
-    total_dislike = len(list(obj_dislike))
-
-    # ...
-    msg = ""
-    if "msg" in request.query_params:
-        msg = request.query_params["msg"]
-
-        return templates.TemplateResponse(
-            "item/detail.html",
-            {
-                "request": request,
-                "msg": msg,
-                "obj": obj,
-                "cmt_list": cmt_list,
-                "total_like": total_like,
-                "total_dislike": total_dislike,
-            },
-        )
-
-    return templates.TemplateResponse(
-        "item/detail.html",
-        {
-            "request": request,
-            "obj": obj,
-            "cmt_list": cmt_list,
-            "total_like": total_like,
-            "total_dislike": total_dislike,
-        },
     )
